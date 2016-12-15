@@ -1,218 +1,410 @@
-#' Ordinal regression for continuous scales
-#'
-#' Continuous ordinal regression with logit link using the 
-#' generalized logistic function as g function. 
+#' @title Ordinal regression for continuous scales 
+#' @description Continuous ordinal regression with logit link using I-splines to model the g function. 
 #' @param formula a formula expression as for regression models, of the form 
 #' response ~ predictors. Only fixed effects are supported. 
 #' The model must have an intercept: attempts to remove one will lead to a warning and will be 
 #' ignored.
 #' @param data  an optional data frame in which to interpret the variables occurring in the 
 #' formulas
+#' @param scale a vector of length 2 with the boundaries of the ordinal scale used. Default is \code{c(0,1)}.
 #' @param weights optional case weights in fitting. Defaults to 1.
-#' @param start a vector of initial values for the regression coefficients
-#' and \code{M},  \code{B}, \code{T}, (offset, slope and symmetry of the g function)
-#' @param link link function, i.e. the type of location-scale distribution assumed for the latent 
-#' distribution. The default ``logit'' link gives the proportional odds model and is the only link function currently supported.
-#' @param gfun A smooth monotonic function capable of capturing the non-linear nature of the 
-#' ordinal measure. It defaults to the generalized logistic function, which is currently the only 
-#' possibility.
-#' @param method The optimizer used to maximize the likelihood function.
+#' @param link link function, i.e. the type of location-scale distribution assumed for 
+#' the latent distribution. The default ``logit'' link gives the proportional odds model 
+#' and is the only link function currently supported.
+#' @param niters a vector of length 2 with the maximimum number of external and internal 
+#' iterations used in the fitting algorithm. The internal algorithm estimates the parameters 
+#' of the model conditional on the current values of \eqn{\lambda}s, the smoothing parameters. 
+#' The external algorithm estimates the values of \eqn{\lambda}s conditional on the current 
+#' estimates of the parameters of the model. Default is \code{c(500,500)}
+#' @param conv_crit the smoothing parameters \eqn{\lambda}'s convergence criteria for the iterative process. 
+#' Default is \eqn{0.01}
 #' @keywords likelihood, log-likelihood, ordinal regression.
-#' @details Fits a continuous ordinal regression model, with fixed effects. The g function is the generalized logistic function (see \code{\link{g_glf}}), and the link function is the logit, 
-#' implying the standard logistic distribution for the latent variable. Maximum likelihood estimation is performed, using \code{optim {stats}} with a quasi-Newton method (\code{"BFGS"}). 
-#' For continuous ordinal mixed modelling, see \code{\link{ocmm}}.
+#' @details Fits a continuous ordinal regression model using penalized maximum likelihood. 
+#' The model can contain fixed effects and optionally mixed effects and smoothers. 
+#' The g function is estimated using monotone increasing I-splines, and the link function is the logit, 
+#' implying the standard logistic distribution for the latent variable. Penalized maximum likelihood 
+#' estimation is performed using the \code{MI} algorithm and the splines smoothing parameters are estimated 
+#' maximizing the marginal posterior (details of the iterative process are printed out during the fit).
 #' 
-#' @seealso For continuous ordinal mixed models, see \code{\link{ocmm}}
 #' @return an object of type \code{ocm} with the components listed below. Parameter estimates are in \code{coefficients}. 
-#' The last 3 elements of \code{coefficients} are the parameters of the g function: 
-#' \code{M},  \code{B},  and \code{T}.
 #' \item{coefficients}{parameter estimates}
+#' \item{pars_obj}{an object of class \code{ocmpars} carrying the parameter estimates and other properties of the regression terms}
 #' \item{vcov}{variance-covariance matrix}
-#' \item{df}{estimated degrees of freedom}
+#' \item{H}{the Hessian matrix}
 #' \item{logLik}{value of the log-likelihood at the estimated optimum}
-#' \item{len_beta}{number of fixed-effects parameters of the model}
-#' \item{len_gfun}{number of parameters in the g function used in the model}
-#' \item{fitted.values}{fitted probabilities}
-#' \item{residuals}{residuals on the latent scale}
+#' \item{penlogLik}{value of the lenalized log-likelihood at the estimated optimum}
 #' \item{v}{vector of continuous scores}
-#' \item{x}{model matrix}
 #' \item{sample.size}{sample size (can differ from the number of observations if the weights are different from 1)}
+#' \item{edf}{estimated degrees of freedom}
+#' \item{df.residual}{the residual degrees of freedom}
 #' \item{nobs}{number of observations}
 #' \item{call}{call to fit the model}
-#' \item{no.pars}{total number of parameters estimated}
 #' \item{data}{data frame used}
+#' \item{weights}{case weights in fitting}
+#' \item{sorting}{the ordinal score v sorting vector}
 #' \item{link}{link function used}
-#' \item{gfun}{g function used}
 #' \item{formula}{formula used}
+#' \item{scale}{the boundaries of the ordinal scale used}
 #'  @references Manuguerra M, Heller GZ (2010). Ordinal Regression Models for Continuous 
 #'  Scales, \emph{The International Journal of Biostatistics}: 6(1), Article 14.
 #' @author Maurizio Manuguerra, Gillian Heller
+#' @import grDevices
+#' @import graphics
+#' @import stats
+#' @import utils
 #' @export
 #' @examples
-#' ANZ0001.ocm <- ANZ0001[ANZ0001$cycleno==0 | ANZ0001$cycleno==5,]
-#' ANZ0001.ocm$cycleno[ANZ0001.ocm$cycleno==5] <- 1
-#' fit.overall  <- ocm(overall  ~ cycleno + age + bsa + treatment, data=ANZ0001.ocm)
-#' fit.phys 	  <- ocm(phys 	  ~ cycleno + age + bsa + treatment, data=ANZ0001.ocm)
-#' fit.pain 	  <- ocm(pain 	  ~ cycleno + age + bsa + treatment, data=ANZ0001.ocm)
-#' fit.mood 	  <- ocm(mood 	  ~ cycleno + age + bsa + treatment, data=ANZ0001.ocm)
-#' fit.nausvom  <- ocm(nausvom  ~ cycleno + age + bsa + treatment, data=ANZ0001.ocm)
-#' fit.appetite <- ocm(appetite ~ cycleno + age + bsa + treatment, data=ANZ0001.ocm)
+#' fit.overall  <- ocm(overall  ~ cycleno + age + bsa + treatment, data=ANZ0001.sub, scale=c(0,100))
 #' summary(fit.overall)
-#' summary(fit.phys)
-#' summary(fit.pain)
-#' summary(fit.mood)
-#' summary(fit.nausvom)
-#' summary(fit.appetite)
-#' par(mfrow=c(2,3))
-#' plot(fit.overall, CIs='vcov', R=100)
-#' plot(fit.phys, CIs='vcov', R=100)
-#' plot(fit.pain, CIs='vcov', R=100)
-#' plot(fit.mood, CIs='vcov', R=100)
-#' plot(fit.nausvom, CIs='vcov', R=100)
-#' plot(fit.appetite, CIs='vcov', R=100)
-#' par(mfrow=c(1,1))
+#' \dontrun{
+#' plot(fit.overall)
+#' ## Smoothers and complete data set
+#' fit.overall.smooth  <- ocm(overall  ~ age + treatment : s(cycleno), data=ANZ0001, scale=c(0,100))
+#' summary(fit.overall.smooth)
+#' plot(fit.overall.smooth)
+#' }
 
 
-ocm <- function(formula, data=NULL, weights, start=NULL, link = c("logit"), 
-                gfun = c("glf"), method = c("optim", "ucminf"))
+ocm <- function(formula, data=NULL, scale=c(0,1), weights, link = c("logit"), niters=c(500,500), conv_crit=1e-2)
 {
-  if (any(sapply(attributes(terms(formula))$term.labels,function(x)grepl("|", x, fixed=T)))) 
-    stop("Random effects specified. Please call ocmm.")
-  if (missing(formula)) 
+	order=4
+	n.int.knots=0
+	lambda=0
+  if (missing(formula) | length(formula)<3) 
     stop("Model needs a formula")
-  if (attributes(terms(formula))$intercept == 0){
-    formula <- update(formula, .~.+1)
-    warning("The model must have an intercept and it has been added to the formula.")
-  }
   link <- match.arg(link)
-  gfun <- match.arg(gfun) 
-  method <- match.arg(method)
   if(is.null(data)) data <- model.frame(formula=formula, data=parent.frame(n=1))
   if(missing(weights)) weights <- rep(1, nrow(data))
   keep <- weights > 0
   data <- data[keep,]
   weights <- weights[keep]
-    
-  mf <- model.frame(formula=formula, data=data)
-  x <- model.matrix(attr(mf, "terms"), data=mf)
-  lenx <- ncol(x)
-  v <- model.response(mf)
-  xnames <- dimnames(x)[[2]][2:lenx]
-  x <- as.matrix(x[,2:lenx])
-  colnames(x) <- xnames
+  data=cbind(Intercept=rep(1,nrow(data)), data)
+  ###############
+  #Model Response
+  ###############
+  v = eval(formula[[2]], envir = data)
   v <- as.numeric(v)
-  if (is.null(start)) {
-    beta_start <- set.beta_start(x,v)
-    len_beta = length(beta_start)
-    names(beta_start) <- xnames[1:len_beta]
-    if (gfun == 'glf') {
-      gfun_start <- set.glf_start(x,v)
-      names(gfun_start) <- c("M", "B", "T")
+  if (min(v)<scale[1] | max(v)>scale[2]) {stop(paste("Ordinal scores (v) outside the ",scale[1],"-",scale[2]," range have been found. Please either rescale or use the 'scale' parameter when calling ocm.",sep=''))}
+  v <- (v-scale[1])/(scale[2]-scale[1])
+  v <- ((length(v)-1)*v+0.5)/length(v)
+  n <- length(unique(v))
+  ### Sort data set by v #FIXME: do we need this?
+  sorting_ind <- order(v)
+  v <- v[sorting_ind]
+  data <- data[sorting_ind,]
+  weights <- weights[sorting_ind]
+  ### Create ocmPARS object
+  pars_obj=ocmPars(formula, data, v)
+  #####################################################
+  #Fit
+  #####################################################
+  regression_edf0 <- sum(sapply(pars_obj, function(x)ifelse(x$type=="fix.eff",x$len,0)))
+  pen_index = which(sapply(pars_obj, function(x)x$estimate_lambda))
+  ##pen_index at least =1 as g function is now non-parametric
+  cat("Ext.iters\tInt.iters\tConvergence (<",conv_crit,")\n", sep='')
+  for (iter in 1:niters[1]){
+    convergence <- NULL
+    conv_val <- NULL 
+    regression_edf <- regression_edf0
+    ##
+    est <- ocmEst4(v, weights, pars_obj, link, niters[2]) 
+    pars_obj <- est[["pars_obj"]]
+    Ginv = est$vcov
+    for (ipen in pen_index){
+      oo = pars_obj[[ipen]]
+      lambda_old = oo$lambda
+      sigma2_old = 1/(2*lambda_old)
+      Q <- oo$Rstar/sigma2_old
+      edf <- oo$len-(sum(diag(Ginv%*%Q))) 
+      sigma2     = c(t(oo$pars)%*%oo$R%*%oo$pars/edf)	
+      lambda_old = ifelse(iter>1,lambda_old,-1)
+      lambda <- pars_obj[[ipen]]$lambda <- 1/(2*sigma2)
+      conv_val <- c(conv_val, abs(lambda-lambda_old)/abs(lambda_old))
+      convergence = c(convergence, (abs(lambda-lambda_old)/abs(lambda_old))<conv_crit)
+      regression_edf <- regression_edf + edf
     }
-    start <- c(beta_start, gfun_start)
-    len_gfun <- length(gfun_start)
+    # check for convergence
+    cat(iter,"\t\t",est$iter,"\t\t",conv_val,"\n")
+    if(all(convergence)){break}
   }
-  est <- ocmEst(start, v, x, weights, link, gfun, method)
-  coef <- est$coefficients
-  beta <- coef[1:len_beta]
-  par_g <- coef[(len_beta+1):(len_beta+len_gfun)]
-  est$len_beta <- len_beta
-  est$len_gfun <- len_gfun
-  est$fitted.values <- as.vector(-x%*%beta)
-  est$residuals <- g_glf(v, par_g) - est$fitted.values
+  if (iter==niters[1]) {
+    warn_msg="The process did not converge. Try increasing the number of iterations (eg niters=c(500,1000))."
+    warning(warn_msg)
+  }
+  
   est$v <- v
-  est$x <- x
-  est$sample.size <- nrow(x)
+  est$sample.size <- nrow(data)
+  est$edf <- regression_edf
+  est$df.residual <- sum(weights)-regression_edf
   est$nobs <- sum(weights)
   est$call <- match.call()
-  est$no.pars <- length(coef)
   est$data <- data
+  est$weights <- weights
+  est$sorting <- sorting_ind
   est$link <- link
-  est$gfun <- gfun
-  est$method <- method
   est$formula <- formula
+  est$scale <- scale
+  est$iter <- NULL
   class(est) <- "ocm"
   est
 }  
 
-#' @title Log-likelihood function for the fixed-effects model
-#'
-#' @details  This function computes minus the log-likelihood function for a fixed-effects model using 
-#' the generalized logistic function as g function and the logit link function. It is used internally 
-#' to fit the model and should not be of interest of the user.
-#' @param par vector of regression coefficients, 
-#' and \code{M},  \code{B}, \code{T}, (offset, slope and symmetry of the g function)
-#' @param v vector of standardized scores from the continuous ordinal scale
-#' @param d.matrix design matrix (fixed effects)
-#' @param wts optional case weights
-#' @param len_beta length of the regression coefficients vector
-#' @keywords likelihood, log-likelihood.
-#' @return Minus the log-likelihood at parameter values \code{par} 
-#' @author Maurizio Manuguerra, Gillian Heller
-
-negloglik_glf <- function(par, v, d.matrix, wts, len_beta){
-  return(-sum(wts * logdensity_glf(par, v, d.matrix, len_beta)))
-}
-
-logdensity_glf <- function(par, v, d.matrix, len_beta){
-  x <- d.matrix
-  beta <- par[1:len_beta]
-  par_g <- par[(len_beta+1):(len_beta+3)]
-  par_dg <- par[(len_beta+2):(len_beta+3)]
-  g <- g_glf(v, par_g)
-  dg <- dg_glf(v, par_dg)
-  if (any(dg<=0)) return(Inf)
-  xb <- x %*% beta
-  return(log(dg) + g + xb -2*log(1+exp(g+xb)))
-}
-
-#' @import ucminf
-ocmEst <- function(start, v, x, weights, link, gfun, method){
-  len_beta <- ncol(x)
-  if (gfun == "glf") {
-    if (link == "logit"){
-      if (method == "optim"){
-        fit <- optim(par=start,negloglik_glf, v=v, d.matrix=x, wts=weights, len_beta=len_beta, method="BFGS", hessian = T)
-      } else if (method == "ucminf") {
-        fit <- ucminf(par=start,negloglik_glf, v=v, d.matrix=x, wts=weights, len_beta=len_beta, hessian = 3)
-      } else {
-        stop("Optimization method not implemented.")
-      }
-    } else {
-      stop("link function not implemented.")
-    }
+#################################################################################
+#################################################################################
+ocmEst4 <- function(v, weights, pars_obj, link, int_iters){
+  n <- length(v)
+  start <- split_obj2pars(pars_obj)
+  if (link == "logit"){
+      fit <- NewtonMi(pars_obj, maxiters=int_iters, wts=weights)
   } else {
-    stop("g function not implemented.")
+    stop("link function not implemented.")
   }
-  ## compute QR-decomposition of x
-  #qx <- qr(x)
-  #Hessian
-  H=fit$hessian
-  #require(numDeriv)
-  #H=hessian(negloglik_glf,fit$par,v=v, d.matrix=x,len_beta=len_beta)
-  qrH <- qr(H)
-  if(qrH$rank < nrow(H))
-    stop("Cannot compute vcov: \nHessian is numerically singular")
-  vcov <- solve.qr(qrH)
-  
-  ## compute (x'x)^(-1) x'y
   coef <- fit$par
   names(coef) <- names(start)
-  len_beta = ncol(x)
-  beta <- coef[1:len_beta]
-  par_g <- coef[(len_beta+1):(len_beta+3)]
-  
+  pars_obj <- split_pars2obj(pars_obj, coef)
+  H <- -hessian(pars_obj)
+  G <- compute_G(H, pars_obj)
+  vcov <- solve(G)
   ## degrees of freedom and standard deviation of residuals
-  df <- nrow(x)-ncol(x)-length(par_g)
-  fitted.values <- inv.logit(g_glf(v, par_g) + x%*%beta)
-  sigma2 <- sum((v - fitted.values)^2)/df
-  
-  ## compute sigma^2 * (x'x)^-1
-  #vcov <- sigma2 * chol2inv(qx$qr)
-  colnames(vcov) <- rownames(vcov) <- c(colnames(x),"M", "B", "T")
+  fix.eff_index = which(sapply(pars_obj, function(x)x$type)=="fix.eff")
+  colnames(vcov) <- rownames(vcov) <- names(coef)
+  logLik <- sum(weights * llik(pars_obj))
   list(coefficients = coef,
+       pars_obj = pars_obj,
        vcov = vcov,
-##       sigma = sqrt(sigma2),
-       df = df,
-       logLik = -fit$value)
+       H = G,
+       iter=fit$iter,
+       logLik = logLik,
+       penlogLik = -fit$value)
 }
+
+#################################################################################
+#################################################################################
+
+#' @title Penalized log-likelihood function
+#' @description Computes the penalized log-likelihood function
+#' @details  This function computes minus the penalized log-likelihood function. It is used internally 
+#' to fit the model and should not be of interest of the user.
+#' @param par vector of regression coefficients
+#' @param v vector of standardized scores from the continuous ordinal scale
+#' @param pars_obj the current object of class \code{ocmpars}.
+#' @param wts optional case weights
+#' @keywords likelihood, log-likelihood.
+#' @return Minus the penalized log-likelihood at parameter values \code{par} 
+#' @author Maurizio Manuguerra, Gillian Heller
+
+negloglik4 <- function(par, v, pars_obj, wts){
+  pars_obj <- split_pars2obj(pars_obj, par)
+  gfun_index = which(sapply(pars_obj, function(x)x$type)=="gfun")
+  if (any(pars_obj[[gfun_index]]$pars<0)) return(+Inf)
+  logliks <- llik(pars_obj)
+  nloglik <- -sum(wts * logliks)
+  pen <- sum(penalty(pars_obj))
+  npen_loglik <- nloglik + pen
+  return(npen_loglik)
+}
+
+NewtonMi <- function(pars_obj, maxiters=50, wts, omega=1, convVal=1E-3){
+  ploglik0 <- pllik(pars_obj, wts=wts)
+  rubric <- make_rubric(pars_obj)
+  gfun_index = which(sapply(pars_obj, function(x)x$type)=="gfun")
+  gfun_range = rubric[gfun_index,]
+  gfun_inds  = gfun_range[1]:gfun_range[2]
+  beta_index = which(sapply(pars_obj, function(x)x$type)!="gfun")
+  beta_range = rubric[-gfun_index,]
+  beta_inds  = (1:max(rubric))[-gfun_inds]
+  pars0=unlist(sapply(pars_obj, function(oi)oi$pars))
+  Beta0=pars0[beta_inds]
+  Theta0=pars0[gfun_inds]
+  for (iter in 1:maxiters){
+    varepsilon <- NULL
+    #######Newton
+      #Compute beta
+    H <- -hessian(pars_obj)
+    G <- compute_G(H, pars_obj)
+    Gbeta <- G[beta_inds,beta_inds]
+    GradBeta <- gradp(pars_obj)[beta_inds]
+    StepBeta <- solve(Gbeta) %*% GradBeta
+    Beta <- Beta0 + StepBeta
+      #Check likelihood
+    pars0[beta_inds] <- Beta
+    pars_obj <- split_pars2obj(pars_obj, pars0)
+    ploglik <- pllik(pars_obj, wts=wts)
+      #If necessary, line search
+    ome <- omega
+    while (ploglik>ploglik0){
+      ifelse(ome>=1e-2, ome<-ome*0.6, ifelse(ome >= 1e-5, ome<- ome*5e-2,ifelse(ome>1e-20,ome<-ome*1e-5,break)))        
+      Beta <- Beta0 + ome*StepBeta
+      pars0[beta_inds] <- Beta
+      pars_obj <- split_pars2obj(pars_obj, pars0)
+      ploglik <- pllik(pars_obj, wts=wts)
+    }
+    ploglik0 <- ploglik
+    varepsilon <- c(varepsilon, abs(Beta-Beta0))
+    Beta0 <- Beta
+    ########MI
+      #Compute theta
+    F <- CDF(pars_obj)
+    Theta_den1 <- as.numeric(2*crossprod(pars_obj[[gfun_index]]$mat, F))
+    Theta_den2 <- as.numeric(2*pars_obj[[gfun_index]]$lambda*(pars_obj[[gfun_index]]$R %*% Theta0))
+    Theta_den2[Theta_den2 < 0] <- 0
+    Theta_den3 <- 0
+    sTheta <- (Theta0+1E-4) / (Theta_den1 + Theta_den2 +Theta_den3 +1E-4)
+    GradTheta <- gradp(pars_obj)[gfun_inds]
+    StepTheta <- sTheta * GradTheta
+    Theta <- Theta0 + StepTheta
+      #Check likelihood
+    pars0[gfun_inds] <- Theta
+    pars_obj <- split_pars2obj(pars_obj, pars0)
+    ploglik <- pllik(pars_obj, wts=wts)
+      #If necessary, line search
+    ome <- omega
+    ii=0
+    while (ploglik>ploglik0){
+      ii=ii+1
+      ifelse(ome>=1e-2, ome<-ome*0.6, ifelse(ome >= 1e-5, ome<- ome*5e-2,ifelse(ome>1e-20,ome<-ome*1e-5,break)))        
+      Theta <- Theta0 + ome*StepTheta
+      pars0[gfun_inds] <- Theta
+      pars_obj <- split_pars2obj(pars_obj, pars0)
+      ploglik <- pllik(pars_obj, wts=wts)
+      #if (ii>50) break
+    }
+    #cat(ii, ome, ploglik0, ploglik)
+    ploglik0 <- ploglik
+    varepsilon <- c(varepsilon, abs(Theta-Theta0))
+    Theta0 <- Theta
+    ########Covergence
+    if (all(varepsilon<convVal)) break
+  }
+  H <- -hessian(pars_obj)
+  G <- compute_G(H, pars_obj)
+  return(list(par=pars0, pars_obj=pars_obj, hessian=G, value=ploglik0, iter=iter))
+}
+
+
+llik <- function(pars_obj){
+  gfun_index = which(sapply(pars_obj, function(x)x$type)=="gfun")
+  if (length(gfun_index)!=1) stop("Something when wrong with the g function. There are either too many or none of them in the pars_obj.")
+  dg = pars_obj[[gfun_index]]$mat1 %*% pars_obj[[gfun_index]]$pars
+  h_comp = sapply(pars_obj, function(x)x$mat %*% x$pars)
+  h= apply(h_comp,1,sum)
+  return(log(dg) + h -2*log(1+exp(h)))
+}
+
+pllik <- function(pars_obj, wts){
+  logliks <- llik(pars_obj)
+  nloglik <- -sum(wts * logliks)
+  pen <- sum(penalty(pars_obj))
+  npen_loglik <- nloglik + pen
+  return(npen_loglik)
+}
+
+density0 <- function(pars_obj){
+  g  <- gfun(pars_obj)
+  dg <- dgfun(pars_obj)
+  return(dg*exp(g)/(1+exp(g))^2)
+}
+
+penalty <- function(pars_obj){
+  pen_index = which(sapply(pars_obj, function(x)x$estimate_lambda))
+  if (length(pen_index)==0){
+    pen=0
+  } else {
+    pen=sapply(pen_index, function(i){with(pars_obj[[i]], lambda * t(pars) %*% (R %*% pars))})
+  }
+  if (any(pen<0)) stop("Something went wrong with the penalty term.")
+  return(pen)
+}
+
+lin_regressor <- function(pars_obj){
+  h_comp = sapply(pars_obj, function(x)x$mat %*% x$pars)
+  apply(h_comp,1,sum)
+}
+
+CDF <- function(pars_obj){
+  h <- lin_regressor(pars_obj)
+  return(exp(h)/(1+exp(h)))
+}
+
+#Only loglik, no pen
+hessian <- function(pars_obj){
+  gfun_index = which(sapply(pars_obj, function(x)x$type)=="gfun")
+  dg <- dgfun(pars_obj)
+  h <- lin_regressor(pars_obj)
+  F <- CDF(pars_obj)
+  nr <- sum(sapply(pars_obj,function(oi)oi$len))
+  H_mat <- matrix(NA, nrow=nr, ncol=nr)
+  H_mat2 <- matrix(NA, nrow=nr, ncol=nr)
+  rubric <- make_rubric(pars_obj)
+  D0 <- -2*exp(h)/(1+exp(h))^2
+  D <- diag(D0)
+  E0 <- as.numeric(-1/dg^2)
+  E <- diag(E0)
+  #FIXME optimise/compare H-mat vs H_mat2
+  for (i in 1:(nrow(rubric)-1)){
+    for (j in (i+1):nrow(rubric)){
+      t1=myTXAY(pars_obj[[i]]$mat, D0, pars_obj[[j]]$mat) 
+      #t2=t(pars_obj[[i]]$mat) %*% D %*% pars_obj[[j]]$mat
+      ##
+      H_mat[rubric[i,1]:rubric[i,2],rubric[j,1]:rubric[j,2]] <- t1
+      H_mat[rubric[j,1]:rubric[j,2],rubric[i,1]:rubric[i,2]] <- t(t1)
+      ##
+      #H_mat2[rubric[i,1]:rubric[i,2],rubric[j,1]:rubric[j,2]] <- t2
+      #H_mat2[rubric[j,1]:rubric[j,2],rubric[i,1]:rubric[i,2]] <- t(t2)
+    }
+  }
+
+  for (i in 1:nrow(rubric)){
+    t1=myTXAY(pars_obj[[i]]$mat, D0, pars_obj[[i]]$mat) 
+    #t2=t(pars_obj[[i]]$mat) %*% D %*% pars_obj[[i]]$mat
+    if (i==gfun_index) {
+      t1=t1+myTXAY(pars_obj[[i]]$mat1, E0, pars_obj[[i]]$mat1) 
+      #t2=t2+t(pars_obj[[i]]$mat1) %*% E %*% pars_obj[[i]]$mat1
+    }
+    H_mat[rubric[i,1]:rubric[i,2],rubric[i,1]:rubric[i,2]] <- t1
+    #H_mat2[rubric[i,1]:rubric[i,2],rubric[i,1]:rubric[i,2]] <- t2
+  }
+  return(H_mat)
+}
+#Only loglik, no pen
+grad0 <- function(pars_obj){
+  F <- CDF(pars_obj)
+  return(unlist(sapply(pars_obj, function(oi){t(oi$mat) %*% (1-2*F) + if(oi$type=='gfun'){t(oi$mat1) %*% (1/dgfun(pars_obj))}else{0}})))
+}
+gradp <- function(pars_obj){
+  return(grad0(pars_obj) - 2*unlist(sapply(pars_obj, function(oi){oi$lambda* (oi$R %*% oi$pars)})))
+}
+
+#######################
+
+
+compute_G <- function(H, pars_obj){
+  pen_index = which(sapply(pars_obj, function(x)x$estimate_lambda))
+  if (length(pen_index)==0){
+    return(H)
+  } else {
+    Qs=lapply(pen_index, function(i){with(pars_obj[[i]], 2*lambda*Rstar)})
+  }
+  G <- H
+  for (Qi in Qs) {G <- G + Qi}
+  return(G)
+}
+
+compute_Rstar <- function(pars_obj){
+  #FIXME optimise
+  pen_index = which(sapply(pars_obj, function(x)x$estimate_lambda))
+  if (length(pen_index)>0){
+    Rs=lapply(pen_index, function(i){with(pars_obj[[i]], R)})
+    rubric <- make_rubric(pars_obj)
+    m = max(rubric)
+    Rstar0=matrix(0,nrow=m,ncol=m)
+    for (i in 1:length(pen_index)) {
+      inds=rubric[pen_index[i],1]:rubric[pen_index[i],2]
+      pars_obj[[pen_index[i]]]$Rstar = Rstar0 
+      pars_obj[[pen_index[i]]]$Rstar[inds,inds] <- Rs[[i]]
+    }
+  }
+  return(pars_obj)
+}
+
+
