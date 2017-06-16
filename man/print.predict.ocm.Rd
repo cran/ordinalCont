@@ -17,11 +17,10 @@ Print method for class \code{predict.ocm}
 \details{
 The table of predictions from \code{predict.ocm} is printed.
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \seealso{
 \code{\link{predict.ocm}}, \code{\link{ocm}}
 }
+\author{
+Maurizio Manuguerra, Gillian Heller
+}
 \keyword{predict}
-

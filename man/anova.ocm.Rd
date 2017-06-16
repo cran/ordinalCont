@@ -37,4 +37,3 @@ Maurizio Manuguerra, Gillian Heller
  @seealso \code{\link{ocm}}, \code{\link{print.anova.ocm}}
 }
 \keyword{anova}
-

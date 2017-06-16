@@ -51,9 +51,9 @@ summary.ocm <- function(object, full=F, ...)
   se <- sqrt(diag(object$vcov))
   tval <- (coef(object)[1:length(se)]-H0) / se
   TAB <- data.frame(Estimate = coef(object),
-               StdErr = se,
-               t.value = tval,
-               p.value = 2*pt(-abs(tval), df=object$edf))
+                    StdErr = se,
+                    t.value = tval,
+                    p.value = 2*pt(-abs(tval), df=object$edf))
   TAB <- as.matrix(TAB)
   row.names(TAB) <- names(coef(object))
   res <- list(call=object$call,
@@ -71,12 +71,12 @@ summary.ocm <- function(object, full=F, ...)
     res$coefficients_rnd=TABrnd
   }
   res$rnd_effs = rnd_effs
-#   ##Smoother
+  #   ##Smoother
   smoother = (length(N.smooth)>0)
   if (smoother){
     TABsmoother <- data.frame(Name = sapply(inds$smoother, function(i)pars_obj[[i]]$group.names),
-                         Variance = sapply(inds$smoother, function(i)round(1/(2*pars_obj[[i]]$lambda),3)),
-                         Std.Dev. = sapply(inds$smoother, function(i)round(sqrt(1/(2*pars_obj[[i]]$lambda)),3)))
+                              Variance = sapply(inds$smoother, function(i)round(1/(2*pars_obj[[i]]$lambda),3)),
+                              Std.Dev. = sapply(inds$smoother, function(i)round(sqrt(1/(2*pars_obj[[i]]$lambda)),3)))
     TABsmoother$Name <- as.character(TABsmoother$Name)
     res$coefficients_smoother=TABsmoother
   }
@@ -129,6 +129,7 @@ print.summary.ocm <- function(x, full, ...)
 #' which to predict. 
 #' Note that all predictor variables should be present, having the same names as the variables 
 #' used to fit the model. If \code{NULL}, predictions are computed for the original dataset.
+#' @param ndens the number of evenly spaced values of \code{v} over which the probability density is evaluated (default: 10)
 #' @param ... further arguments passed to or from other methods
 #' @keywords predict
 #' @method predict ocm
@@ -148,7 +149,7 @@ print.summary.ocm <- function(x, full, ...)
 #' @details An object of class \code{ocm} and optionally a new data 
 #' frame are used to compute the probability 
 #' densities of \code{v}, the continuous ordinal score. The estimated parameters 
-#' of the fitted model and \code{ndens} (default: 100) 
+#' of the fitted model and \code{ndens}
 #' values of \code{v} are used to compute the probability densities on the latent scale. 
 #' These values are then transformed to scores on the continuous ordinal 
 #' scale using the estimated g function.
@@ -162,9 +163,8 @@ print.summary.ocm <- function(x, full, ...)
 #' @export
 
 
-predict.ocm <- function(object, newdata=NULL, ...)
+predict.ocm <- function(object, newdata=NULL, ndens=10, ...)
 {
-  ndens <- 10
   v <- seq(range(object$v)[1], range(object$v)[2], length.out = ndens)
   pars_obj_fit <- object[[2]]
   inds <- ind_pars_obj(pars_obj_fit)
@@ -303,11 +303,10 @@ plot.predict.ocm <- function(x, records=NULL, ...)
 #' @param main_density  title of the density function plot. Defauts to ``Density function when X=0''
 #' @param xlab  label of the x axis for the g function and the density plots. Defaults to ``Continuous ordinal scale [v]''
 #' @param CIcol  color of the confidence interval bands. Defaults to ``lightblue''
+#' @param individual_plots logical. If TRUE, every figure is drawn in a new window. If FALSE (default), the first four figures are drawn in a 2-by-2 array.
 #' @param ... further arguments passed to or from other methods
-#' @details The fitted g function of an \code{ocm} object is plotted. 
+#' @details The estimated g function, quantile residual histogram and normal Q-Q plot of an \code{ocm} object are plotted. If smothers are included in the formula, the user has the option to plot them in the same graph or separately.
 #' If \code{CIs} is not \code{"no"}, 95\% confidence bands are also plotted.
-#' Confidence bands computed with any of the bootstrapping options are 
-#' obtained with simple percentiles. 
 #' @keywords plot
 #' @export
 #' @import boot
@@ -322,7 +321,7 @@ plot.predict.ocm <- function(x, records=NULL, ...)
 #' }
 #' @author Maurizio Manuguerra, Gillian Heller
 
-plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap','param.bootstrap'), R = 100, main_gfun="g function", main_density="Density function when X=0", xlab="Continuous ordinal scale [v]", CIcol = 'lightblue', ...)
+plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap','param.bootstrap'), R = 100, main_gfun="g function", main_density="Density function when X=0", xlab="Continuous ordinal scale [v]", CIcol = 'lightblue', individual_plots=F, ...)
 {
   pars_obj <- x[[2]]
   inds <- ind_pars_obj(pars_obj)
@@ -331,8 +330,11 @@ plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap'
   N_smooth_terms <- length(inds$smoother)
   s_inds <- lapply(inds$smoother, function(ii)rubric[ii,1]:rubric[ii,2])
   ###
-  ncols=2
-  par(mfrow=c(2,ncols))
+  if (!individual_plots){
+    ncols=3
+    # par(mfrow=c(2,ncols))
+    par(mfrow=c(1,ncols))
+  }
   #par(mfrow=c(2+ceiling(N_smooth_terms/ncols),ncols))
   
   #FIXME: with bootstrapping, when a variable is a factor, it could go out of observations for some 
@@ -349,18 +351,30 @@ plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap'
   ylim <- c(min(gfun), max(gfun))
   if (CIs=='vcov'){ 
     vcov_g <- x$vcov[g_inds,g_inds]
-    rparams <- mvrnormR(R, pars_obj[[inds$gfun]]$pars, vcov_g)
-    rparams[rparams<0] <- 0
-    all_gfuns <- NULL
-    for (i in 1:R)  {pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars=rparams[i,]; all_gfuns <- rbind(all_gfuns, as.numeric(gfun(pars_obj_tmp)))}
-    ci_low  <- intercept + apply(all_gfuns, 2, function(x )quantile(x, 0.025))
-    ci_median <- intercept + apply(all_gfuns, 2, function(x)quantile(x, 0.5))
-    ci_high <- intercept + apply(all_gfuns, 2, function(x)quantile(x, 0.975)) 
+    vg=pars_obj[[inds$gfun]]$pars
+    sevg <- solve(t(vg)%*%solve(vcov_g)%*%vg) ^ .5
+    sevg <- rep(sevg, length(pars_obj[[inds$gfun]]$pars))
+    pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars <- pars_obj[[inds$gfun]]$pars - 1.96*sevg; ci_low = intercept + as.numeric(gfun(pars_obj_tmp))
+    pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars <- pars_obj[[inds$gfun]]$pars + 1.96*sevg; ci_high = intercept +  as.numeric(gfun(pars_obj_tmp))
+    
+    # #Warning: estimated parameter for the i-spline are not mvnormal, as they need to be positive (truncated mvnormal)
+     mat=pars_obj_tmp[[inds$gfun]]$mat
+     se_g <- diag(mat %*% tcrossprod(vcov_g,mat)) ^ .5
+     ci_low  = (intercept + as.numeric(mat %*% vg) - 1.96*se_g)
+     ci_high = (intercept + as.numeric(mat %*% vg) + 1.96*se_g)
+    
+    # rparams <- mvrnormR(R, pars_obj[[inds$gfun]]$pars, vcov_g)
+    # #rparams[rparams<0] <- 0
+    # all_gfuns <- NULL
+    # for (i in 1:R)  {pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars=rparams[i,]; all_gfuns <- rbind(all_gfuns, as.numeric(gfun(pars_obj_tmp)))}
+    # ci_low  <- intercept + apply(all_gfuns, 2, function(x )quantile(x, 0.025))
+    # ci_median <- intercept + apply(all_gfuns, 2, function(x)quantile(x, 0.5))
+    # ci_high <- intercept + apply(all_gfuns, 2, function(x)quantile(x, 0.975)) 
     ylim <- c(min(ci_low), max(ci_high))
   } else if (CIs=='rnd.x.bootstrap' | CIs=='fix.x.bootstrap'| CIs=='param.bootstrap'){
     input='?'
     while (input!="" & input!="q"){
-	  cat("The option chosen is extremely time-consuming. It is advisable to run the plot function with CI='vcov'.\n")
+      cat("The option chosen is extremely time-consuming. It is advisable to run the plot function with CI='vcov'.\n")
       input= readline("Press RETURN to continue with the option chosen or 'q' to quit: ")
     }
     if (input=='q') return(invisible())
@@ -386,15 +400,16 @@ plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap'
   lines(xlim, c(0, 0), col='grey')
   lines(v,gfun0,lty=21)
   legend('topleft', c("g function","Std logit"), lty=c(19,21))
-  
-  ########### PLOT 2
-  #Density - no covs
-  fdensity <- density0(pars_obj)
-  plot(v, fdensity, main=main_density, ylab="f(v|beta=0)", xlab=xlab,t='l')
-  #plot(v, exp(h)/exp(gfun), main="odds ratio", xlab=xlab, ylab = "OR", t='l')
-  #plot(v, exp(gfun), main="baseline odds", xlab=xlab, ylab = "", t='l')
-  #plot(v, exp(gfun)/(exp(gfun)+1), main='cumulative distribution', xlab=xlab, ylab = "prob(V<v)", t='l')
-  
+  if (individual_plots)readline("Press any key to continue.\n")
+  # ########### PLOT 2
+  # #Density - no covs
+  # fdensity <- density0(pars_obj)
+  # plot(v, fdensity, main=main_density, ylab="f(v|beta=0)", xlab=xlab,t='l')
+  # #plot(v, exp(h)/exp(gfun), main="odds ratio", xlab=xlab, ylab = "OR", t='l')
+  # #plot(v, exp(gfun), main="baseline odds", xlab=xlab, ylab = "", t='l')
+  # #plot(v, exp(gfun)/(exp(gfun)+1), main='cumulative distribution', xlab=xlab, ylab = "prob(V<v)", t='l')
+  # if (individual_plots)readline("Press any key to continue.\n")
+  # 
   ########### PLOT 3 
   #Quantile residuals
   qres <- qnorm((CDF(pars_obj)))
@@ -402,37 +417,43 @@ plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap'
   hist(qres, main="Quantile residuals", xlab="Quantile residuals", prob=T, xlim=c(min(qres)-.2*abs(min(qres)), max(qres)+.2*abs(max(qres))))
   lines(density(qres, bw=0.5))
   rug(qres)
+  if (individual_plots)readline("Press any key to continue.\n")
   
   ########### PLOT 4 
   #QQ plot
   #hist(qres,n=20, main="Quantile residuals distribution", xlab=xlab)
   qqnorm(qres)
-  qqline(qres)
+  #qqline(qres)
+  lines(x=c(-100,100),y=c(-100,100))
   
   ########### Additional plots
   if (N_smooth_terms>0){
-	  if (N_smooth_terms>1){
-	    cat('There are', N_smooth_terms, "smoothing terms in the model:\n")
-    	cat(sapply(pars_obj[inds$smoother],function(x)x$group.names),"\n")
-    	cat("Each one will be shown in a new plot. If you want to change the default behaviour, you can input a sequence of length",N_smooth_terms, "of 1's and 0's (1: new plot; 0: plot added to the previous one), separated by commas and without spaces (eg '1,0,0').")
-    	input = readline("Press ENTER to accept the default option or enter a sequence of 0's and 1's:\t")
-    	if (input=='') {
-    	  which.plot = rep(1,N_smooth_terms)
-    	} else {
-    	  which.plot = as.numeric(unlist(strsplit(input,split=",", fixed=T)))
-    	  which.plot[1]=1
-    	}
-	  } else {
-		  input = readline("Press ENTER to continue:\t")
-		  which.plot=1
-	  }
+    if (N_smooth_terms>1){
+      cat('There are', N_smooth_terms, "smoothing terms in the model:\n")
+      cat(sapply(pars_obj[inds$smoother],function(x)x$group.names),"\n")
+      cat("Each one will be shown in a new plot. If you want to change the default behaviour, you can input a sequence of length",N_smooth_terms, "of 1's and 0's (1: new plot; 0: plot added to the previous one), separated by commas and without spaces (eg '1,0,0').")
+      input = readline("Press ENTER to accept the default option or enter a sequence of 0's and 1's:\t")
+      if (input=='') {
+        which.plot = rep(1,N_smooth_terms)
+      } else {
+        which.plot = as.numeric(unlist(strsplit(input,split=",", fixed=T)))
+        which.plot[1]=1
+      }
+    } else {
+      input = readline("Press ENTER to continue:\t")
+      which.plot=1
+    }
     num.plots=sum(which.plot)
-	if (num.plots==1){
-		par(mfrow=c(1,1))
-	} else {
-	    par(mfrow=c(ceiling(num.plots/ncols),ncols))
-	}
-	sfun=vv=grpnames=ci_low=ci_high=list()
+    if (num.plots==1){
+      par(mfrow=c(1,1))
+    } else if (num.plots==2){
+      par(mfrow=c(1,2))
+    } else if (num.plots==3){
+      par(mfrow=c(1,3))
+    } else {
+      par(mfrow=c(ceiling(num.plots/2),2))
+    }
+    sfun=vv=grpnames=ci_low=ci_high=list()
     for (i in 1:N_smooth_terms){
       ii <- inds$smoother[i]
       no_nas = which(!is.na(pars_obj[[ii]]$v))
@@ -442,43 +463,51 @@ plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap'
       oo=order(v)
       vv[[i]]=v[oo]
       sfun[[i]]=(mat %*% pars)[oo]
-	  grpnames[[i]]=pars_obj[[ii]]$group.names
+      grpnames[[i]]=pars_obj[[ii]]$group.names
       if (CIs!='no'){
         vcov_s <- x$vcov[s_inds[[i]],s_inds[[i]]]
-        rparams <- mvrnormR(R, pars, vcov_s)
-        all_sfuns <- NULL
-        for (ir in 1:R)  {all_sfuns <- rbind(all_sfuns, as.numeric(mat %*% rparams[ir,])[oo])}
-        ci_low[[i]]  <- (apply(all_sfuns, 2, function(x )quantile(x, 0.025)))
-        #ci_median <- (apply(all_sfuns, 2, function(x)quantile(x, 0.5)))[oo]
-        ci_high[[i]] <- (apply(all_sfuns, 2, function(x)quantile(x, 0.975)))
-        #ylim <- c(min(ci_low), max(ci_high))
+        se_s <- diag(mat %*% tcrossprod(vcov_s,mat)) ^ .5
+        ci_low[[i]]  = (as.numeric(mat %*% (pars_obj[[ii]]$pars) - 1.96*se_s))[oo]
+        ci_high[[i]] = (as.numeric(mat %*% (pars_obj[[ii]]$pars) + 1.96*se_s))[oo]
+        
+        # rparams <- mvrnormR(R, pars, vcov_s)
+        # all_sfuns <- NULL
+        # for (ir in 1:R)  {all_sfuns <- rbind(all_sfuns, as.numeric(mat %*% rparams[ir,])[oo])}
+        # ci_low[[i]]  <- (apply(all_sfuns, 2, function(x )quantile(x, 0.025)))
+        # #ci_median <- (apply(all_sfuns, 2, function(x)quantile(x, 0.5)))[oo]
+        # ci_high[[i]] <- (apply(all_sfuns, 2, function(x)quantile(x, 0.975)))
+        # ylim <- c(min(ci_low), max(ci_high))
       }
-	}
-	ii=0 #needed for drawing legend, don't delete
-	for (i in 1:N_smooth_terms){
-		ones=which(which.plot==1)
-		#plot
-      	if (which.plot[i]==1){
-			next.one=ones[ones>i]
-			if (length(next.one)==1){
-				ii= i:(next.one-1)
-			} else {
-				ii= i:N_smooth_terms
-			}
-			ylim <- c(min(unlist(ci_low[ii])), max(unlist(ci_high[ii])))
-			xlim <- range(unlist(vv[ii]))
-        	plot(vv[[i]],sfun[[i]], main=grpnames[[i]], t='l', xlab="v", ylab="s(v)", xlim=xlim, ylim=ylim)
-      	} else {
-        	lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1]))
-      	}
-		#CI
-      	if (CIs!='no'){
-      	  xcol <- col2rgb(CIcol)/255
-        	polygon(c(vv[[i]], rev(vv[[i]])),c(ci_low[[i]],rev(ci_high[[i]])), col = rgb(xcol[1],xcol[2],xcol[3],0.5))
-        	lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1])) #to superimpose gfun estimate on shaded area
-      	}
-		#legend
-		if (i==tail(ii,1)) legend('topleft', unlist(grpnames[ii]), lty=(18+(1:length(ii))))
+    }
+    ii=0 #needed for drawing legend, don't delete
+    for (i in 1:N_smooth_terms){
+      ones=which(which.plot==1)
+      #plot
+      if (which.plot[i]==1){
+        next.one=ones[ones>i]
+        if (length(next.one)==1){
+          ii= i:(next.one-1)
+        } else {
+          ii= i:N_smooth_terms
+        }
+        if (CIs!='no'){
+          ylim <- c(min(unlist(ci_low[ii])), max(unlist(ci_high[ii])))
+        } else {
+          ylim <- range(sfun[[i]])
+        }
+        xlim <- range(unlist(vv[ii]))
+        plot(vv[[i]],sfun[[i]], main=grpnames[[i]], t='l', xlab="v", ylab="s(v)", xlim=xlim, ylim=ylim)
+      } else {
+        lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1]))
+      }
+      #CI
+      if (CIs!='no'){
+        xcol <- col2rgb(CIcol)/255
+        polygon(c(vv[[i]], rev(vv[[i]])),c(ci_low[[i]],rev(ci_high[[i]])), col = rgb(xcol[1],xcol[2],xcol[3],alpha=0.5))
+        lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1])) #to superimpose gfun estimate on shaded area
+      }
+      #legend
+      if (i==tail(ii,1)) legend('topleft', unlist(grpnames[ii]), lty=(18+(1:length(ii))))
     }
   }
   par(mfrow=c(1,1))
@@ -591,17 +620,17 @@ anova.ocm <- function(object, ...)
 
 print.anova.ocm <- function(x, digits=max(getOption("digits") - 2, 3), 
                             signif.stars=getOption("show.signif.stars"), ...){
-    if (!is.null(heading <- attr(x, "heading")))
-      cat(heading, "\n")
-    models <- attr(x, "models")
-    #row.names(models) <- paste("Model ",1:nrow(models),":",sep='')
-    print(models, right=FALSE)
-    cat("\n")
-    printCoefmat(x, digits=digits, signif.stars=signif.stars,
-                 tst.ind=4, cs.ind=NULL, # zap.ind=2, #c(1,5),
-                 P.values=TRUE, has.Pvalue=TRUE, na.print="", ...)
-    return(invisible(x))
-  }
+  if (!is.null(heading <- attr(x, "heading")))
+    cat(heading, "\n")
+  models <- attr(x, "models")
+  #row.names(models) <- paste("Model ",1:nrow(models),":",sep='')
+  print(models, right=FALSE)
+  cat("\n")
+  printCoefmat(x, digits=digits, signif.stars=signif.stars,
+               tst.ind=4, cs.ind=NULL, # zap.ind=2, #c(1,5),
+               P.values=TRUE, has.Pvalue=TRUE, na.print="", ...)
+  return(invisible(x))
+}
 
 
 

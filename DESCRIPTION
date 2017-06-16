@@ -1,6 +1,6 @@
 Package: ordinalCont
 Title: Ordinal Regression Analysis for Continuous Scales
-Version: 1.0.2
+Version: 1.2
 Authors@R: c(person("Maurizio Manuguerra", role = c("aut", "cre"),
   	     email = "maurizio.manuguerra@mq.edu.au"),
 	      person("Gillian Heller", role = "aut", email = "gillian.heller@mq.edu.au"))
@@ -20,8 +20,8 @@ Description: A regression framework for response variables which are continuous
 Depends: R (>= 3.1.1), boot, splines
 License: GPL (>= 2)
 LazyData: true
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 NeedsCompilation: no
-Packaged: 2016-12-15 00:24:51 UTC; manuguerra
+Packaged: 2017-06-15 23:50:09 UTC; manuguerra
 Repository: CRAN
-Date/Publication: 2016-12-15 09:05:12
+Date/Publication: 2017-06-16 18:10:21 UTC

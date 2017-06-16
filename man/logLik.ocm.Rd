@@ -26,10 +26,9 @@ fit.overall  <- ocm(overall  ~ cycleno + age + bsa + treatment, data=ANZ0001.sub
 logLik(fit.overall)
 }
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \seealso{
 \code{\link{ocm}}
 }
-
+\author{
+Maurizio Manuguerra, Gillian Heller
+}

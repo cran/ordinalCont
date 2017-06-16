@@ -1,4 +1,4 @@
-ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.names=NULL, par.names=NULL, v=NULL, v2=NULL, mat=NULL, order=NULL, n.int.knots=NULL){
+ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.names=NULL, par.names=NULL, v=NULL, v2=NULL, mat=NULL, order=4, n.int.knots=NULL){
   if (type=="fix.eff"){
     len=ncol(mat)
     pars=rep(0,len)
@@ -9,23 +9,31 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
     lambda=0
     R <- diag(0,len)
     estimate_lambda = F
+    use_lambda = F
   } else if (type=="gfun"){
     n <- length(unique(v))
     #max.n = max(2,round((n-len_beta-1-order)*0.8))
-    max.n = max(2,round((n-1-order)*0.8))
-    if (n.int.knots==0) n.int.knots=ifelse(max.n<8, max.n, 8) #TODO rewrite log interpolation
+    max.n = max(8,round((n-1-order)*0.8))
+    if (is.null(n.int.knots)) n.int.knots=ifelse(max.n<15, max.n, 15) #TODO rewrite log interpolation
     #if (n.knots==0) n.knots=ifelse(n<50, n, ifelse(n<=3200,round(49+exp(2.1408+0.3573*log(max.n-49))),round(200+(max.n-3200)^0.2))) #TODO rewrite log interpolation
-    len = n.int.knots+order
+    len = (n.int.knots+order)-1
     pars <- rep(1, len) #runif(len) 
     names(pars) = paste("g function: theta",1:len)
     knots  <- knots2_mpl(unique(v), range(v), order=order, n.int.knots=n.int.knots, splines="isplines")
+    ##basis2_mpl returns the centered basis functions evaluated at v
     bases  <- basis2_mpl(v,knots,order=order,which=c(1,2,3), splines="isplines")
     mat=bases$Psi
     mat1=bases$psi
     mat2=bases$psi2
+    vars=apply(mat,2,var)
+    idrop=which.min(vars)
+    mat=mat[,-idrop]
+    mat1=mat1[,-idrop]
+    mat2=mat2[,-idrop]
     R <- formR2(v, mat2)
     lambda = .00001
     estimate_lambda = T
+    use_lambda = T
   } else if (type=="rnd.eff"){
     len=ncol(mat)
     lambda=1
@@ -37,16 +45,18 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
     knots=NULL
     R <- diag(1,len)
     estimate_lambda = T
+    use_lambda = T
   } else if (type=="smoother"){
     which.na = which(is.na(v))
     n <- length(unique(v[!is.na(v)]))
     max.n = max(2,round((n-1-order)*0.8)) ##FIXME consider gfun. maybe a vector with all the numbers 
-    if (n.int.knots==0) n.int.knots=ifelse(max.n<15, max.n, 15) #TODO rewrite log interpolation
+    if (is.null(n.int.knots)) n.int.knots=ifelse(max.n<15, max.n, 15) #TODO rewrite log interpolation
     len = (n.int.knots+order-1)-1
     pars <- runif(len) #it's delta_theta, not theta
     if (is.null(par.names)) par.names=paste(paste(group.names,": theta",sep=''),1:len)
     names(pars) <- par.names
     knots  <- knots2_mpl(unique(v[!is.na(v)]), range(v[!is.na(v)]), order=order, n.int.knots=n.int.knots, splines="bsplines")
+    ##basis2_mpl returns the centered basis functions evaluated at v
     bases  <- basis2_mpl(v[!is.na(v)],knots,order=order,which=c(1,2,3), splines="bsplines")
     mat=bases$Psi
     mat1=bases$psi
@@ -71,6 +81,7 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
     R <- formR2(v[!is.na(v)], mat2)
     lambda = .00001
     estimate_lambda = T
+    use_lambda = T
   }
   obj=list(
     type = type,
@@ -85,13 +96,14 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
     order = order, 
     knots = knots,
     lambda = lambda,
-    estimate_lambda = estimate_lambda
+    estimate_lambda = estimate_lambda,
+    use_lambda = use_lambda
   )
   return(obj)
 }
 
 
-ocmPars <- function(formula, data, v, n.int.knots=0, order=4){
+ocmPars <- function(formula, data, v, n.int.knots, order){
   ##########################
   #fix, smooth and rnd terms
   ##########################
@@ -199,6 +211,14 @@ ocmPars <- function(formula, data, v, n.int.knots=0, order=4){
   class(obj) <- c("ocmPars", "list")
   #print(str(obj))
   obj
+}
+#######################################################################################
+reset.rnd.eff <- function(pars_obj){
+  rnd.eff_index = which(sapply(pars_obj, function(x)x$type)=="rnd.eff")
+  if (length(rnd.eff_index>0)){
+    for (i in rnd.eff_index) pars_obj[[i]]$pars = pars_obj[[i]]$pars - mean(pars_obj[[i]]$pars %*% pars_obj[[i]]$pars)
+  }
+  return(pars_obj)
 }
 #######################################################################################
 remove.rnd.eff <- function(formula){

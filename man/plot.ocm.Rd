@@ -7,7 +7,8 @@
 \method{plot}{ocm}(x, CIs = c("vcov", "no", "rnd.x.bootstrap",
   "fix.x.bootstrap", "param.bootstrap"), R = 100, main_gfun = "g function",
   main_density = "Density function when X=0",
-  xlab = "Continuous ordinal scale [v]", CIcol = "lightblue", ...)
+  xlab = "Continuous ordinal scale [v]", CIcol = "lightblue",
+  individual_plots = F, ...)
 }
 \arguments{
 \item{x}{an object of class \code{ocm}}
@@ -26,6 +27,8 @@ resampling; \code{"param.bootstrap"} = parametric bootstrap}
 
 \item{CIcol}{color of the confidence interval bands. Defaults to ``lightblue''}
 
+\item{individual_plots}{logical. If TRUE, every figure is drawn in a new window. If FALSE (default), the first four figures are drawn in a 2-by-2 array.}
+
 \item{...}{further arguments passed to or from other methods}
 }
 \description{
@@ -34,10 +37,8 @@ the estimated density function of the continuous ordinal score for the null mode
 the histogram of the quantile residuals, the normal Q-Q plot and any smoother included in the model.
 }
 \details{
-The fitted g function of an \code{ocm} object is plotted. 
+The estimated g function, quantile residual histogram and normal Q-Q plot of an \code{ocm} object are plotted. If smothers are included in the formula, the user has the option to plot them in the same graph or separately.
 If \code{CIs} is not \code{"no"}, 95\% confidence bands are also plotted.
-Confidence bands computed with any of the bootstrapping options are 
-obtained with simple percentiles.
 }
 \examples{
 fit.overall  <- ocm(overall  ~ cycleno + age + bsa + treatment, data=ANZ0001.sub, scale=c(0,100))
@@ -48,11 +49,10 @@ plot(fit.overall, CIs="fix.x.bootstrap", R=100)
 plot(fit.overall, CIs="param.bootstrap", R=100)
 }
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \seealso{
 \code{\link{ocm}}
 }
+\author{
+Maurizio Manuguerra, Gillian Heller
+}
 \keyword{plot}
-

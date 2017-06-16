@@ -20,11 +20,10 @@ Summary method for class \code{ocm}
 fit.overall  <- ocm(overall  ~ cycleno + age + bsa + treatment, data=ANZ0001.sub, scale=c(0,100))
 summary(fit.overall)
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \seealso{
 \code{\link{ocm}}, \code{\link{print.ocm}}
 }
+\author{
+Maurizio Manuguerra, Gillian Heller
+}
 \keyword{summary}
-

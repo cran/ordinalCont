@@ -4,7 +4,7 @@
 \alias{predict.ocm}
 \title{Predict method for Continuous Ordinal Fits}
 \usage{
-\method{predict}{ocm}(object, newdata = NULL, ...)
+\method{predict}{ocm}(object, newdata = NULL, ndens = 10, ...)
 }
 \arguments{
 \item{object}{an object of class \code{ocm}, usually a result of a call to \code{ocm}}
@@ -13,6 +13,8 @@
 which to predict. 
 Note that all predictor variables should be present, having the same names as the variables 
 used to fit the model. If \code{NULL}, predictions are computed for the original dataset.}
+
+\item{ndens}{the number of evenly spaced values of \code{v} over which the probability density is evaluated (default: 10)}
 
 \item{...}{further arguments passed to or from other methods}
 }
@@ -37,7 +39,7 @@ Predicted values based on \code{ocm} object
 An object of class \code{ocm} and optionally a new data 
 frame are used to compute the probability 
 densities of \code{v}, the continuous ordinal score. The estimated parameters 
-of the fitted model and \code{ndens} (default: 100) 
+of the fitted model and \code{ndens}
 values of \code{v} are used to compute the probability densities on the latent scale. 
 These values are then transformed to scores on the continuous ordinal 
 scale using the estimated g function.
@@ -49,11 +51,10 @@ pred <- predict(fit.overall)
 plot(pred)
 }
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \seealso{
 \code{\link{ocm}}, \code{\link{plot.predict.ocm}}
 }
+\author{
+Maurizio Manuguerra, Gillian Heller
+}
 \keyword{predict}
-

@@ -30,4 +30,3 @@ Maurizio Manuguerra, Gillian Heller
 }
 \keyword{likelihood,}
 \keyword{log-likelihood.}
-

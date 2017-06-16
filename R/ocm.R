@@ -18,6 +18,9 @@
 #' estimates of the parameters of the model. Default is \code{c(500,500)}
 #' @param conv_crit the smoothing parameters \eqn{\lambda}'s convergence criteria for the iterative process. 
 #' Default is \eqn{0.01}
+#' @param n.int.knots the number of internal knots used to compute the spline bases. The default (NULL) is round((n-1-order)*0.8) if in the interval [8,15], and 8 or 15 otherwise.
+#' @param order the order of the spline functions. The default is 4 (cubic splines).
+#' @param lambdas NA (the default) or a vector of length equal to the number of smoothing terms, including the g function and, optionally, the random effect terms and the smooters. If ``lambdas'' is a vector, each element \eqn{\lambda_i} can be a number, in which case the corresponding term is penalized using \eqn{\lambda_i} as smoothing parameter, zero, in which case the corresponding term is unpenalized, or NA, in which case the value of \eqn{\lambda_i} is estimated maximmizing the marginal posterior function.
 #' @keywords likelihood, log-likelihood, ordinal regression.
 #' @details Fits a continuous ordinal regression model using penalized maximum likelihood. 
 #' The model can contain fixed effects and optionally mixed effects and smoothers. 
@@ -65,10 +68,8 @@
 #' }
 
 
-ocm <- function(formula, data=NULL, scale=c(0,1), weights, link = c("logit"), niters=c(500,500), conv_crit=1e-2)
+ocm <- function(formula, data=NULL, scale=c(0,1), weights, link = c("logit"), niters=c(500,500), conv_crit=1e-2, n.int.knots=NULL, order=4, lambdas=NA)
 {
-	order=4
-	n.int.knots=0
 	lambda=0
   if (missing(formula) | length(formula)<3) 
     stop("Model needs a formula")
@@ -94,14 +95,22 @@ ocm <- function(formula, data=NULL, scale=c(0,1), weights, link = c("logit"), ni
   data <- data[sorting_ind,]
   weights <- weights[sorting_ind]
   ### Create ocmPARS object
-  pars_obj=ocmPars(formula, data, v)
+  pars_obj=ocmPars(formula, data, v, n.int.knots, order)
+  pen_index = which(sapply(pars_obj, function(x)x$use_lambda))
+  n_lambda = length(pen_index)
+  if (any(!is.na(lambdas))){
+    il = which(!sapply(lambdas,is.na))
+    ipen = pen_index[il]
+    lambdas = lambdas[il]
+    for (ii in 1:length(ipen)) {pars_obj[[ipen[ii]]]$estimate_lambda=F; pars_obj[[ipen[ii]]]$lambda=lambdas[ii]}
+  }
   #####################################################
   #Fit
   #####################################################
   regression_edf0 <- sum(sapply(pars_obj, function(x)ifelse(x$type=="fix.eff",x$len,0)))
   pen_index = which(sapply(pars_obj, function(x)x$estimate_lambda))
   ##pen_index at least =1 as g function is now non-parametric
-  cat("Ext.iters\tInt.iters\tConvergence (<",conv_crit,")\n", sep='')
+  if (length(pen_index)>0) cat("Ext.iters\tInt.iters\tlambda",rep("\t",2*length(pen_index)),"Convergence (<",conv_crit,")\n", sep='')
   for (iter in 1:niters[1]){
     convergence <- NULL
     conv_val <- NULL 
@@ -110,22 +119,27 @@ ocm <- function(formula, data=NULL, scale=c(0,1), weights, link = c("logit"), ni
     est <- ocmEst4(v, weights, pars_obj, link, niters[2]) 
     pars_obj <- est[["pars_obj"]]
     Ginv = est$vcov
-    for (ipen in pen_index){
-      oo = pars_obj[[ipen]]
-      lambda_old = oo$lambda
-      sigma2_old = 1/(2*lambda_old)
-      Q <- oo$Rstar/sigma2_old
-      edf <- oo$len-(sum(diag(Ginv%*%Q))) 
-      sigma2     = c(t(oo$pars)%*%oo$R%*%oo$pars/edf)	
-      lambda_old = ifelse(iter>1,lambda_old,-1)
-      lambda <- pars_obj[[ipen]]$lambda <- 1/(2*sigma2)
-      conv_val <- c(conv_val, abs(lambda-lambda_old)/abs(lambda_old))
-      convergence = c(convergence, (abs(lambda-lambda_old)/abs(lambda_old))<conv_crit)
-      regression_edf <- regression_edf + edf
+    if (length(pen_index)>0){
+      for (ipen in pen_index){
+        oo = pars_obj[[ipen]]
+        lambda_old = oo$lambda
+        sigma2_old = 1/(2*lambda_old)
+        Q <- oo$Rstar/sigma2_old
+        edf <- oo$len-(sum(diag(Ginv%*%Q))) 
+        sigma2     = c(t(oo$pars)%*%oo$R%*%oo$pars/edf)	
+        lambda_old = ifelse(iter>1,lambda_old,-1)
+        lambda <- pars_obj[[ipen]]$lambda <- 1/(2*sigma2)
+        conv_val <- c(conv_val, abs(lambda-lambda_old)/abs(lambda_old))
+        convergence = c(convergence, (abs(lambda-lambda_old)/abs(lambda_old))<conv_crit)
+        regression_edf <- regression_edf + edf
+      }
+      # check for convergence
+      #cat(iter,"\t\t",est$iter,"\t\t",conv_val,"\n")
+      cat(iter,"\t\t",est$iter,"\t\t",sapply(pars_obj[pen_index],function(x)x$lambda),"\t\t",round(conv_val,4),"\t\t","\n")
+      if(all(convergence)){break}
+    } else {
+      break
     }
-    # check for convergence
-    cat(iter,"\t\t",est$iter,"\t\t",conv_val,"\n")
-    if(all(convergence)){break}
   }
   if (iter==niters[1]) {
     warn_msg="The process did not converge. Try increasing the number of iterations (eg niters=c(500,1000))."
@@ -253,6 +267,8 @@ NewtonMi <- function(pars_obj, maxiters=50, wts, omega=1, convVal=1E-3){
     GradTheta <- gradp(pars_obj)[gfun_inds]
     StepTheta <- sTheta * GradTheta
     Theta <- Theta0 + StepTheta
+    ##FIXME check with Jun
+    #Theta[Theta<10E-3] = 10E-3
       #Check likelihood
     pars0[gfun_inds] <- Theta
     pars_obj <- split_pars2obj(pars_obj, pars0)
@@ -264,6 +280,9 @@ NewtonMi <- function(pars_obj, maxiters=50, wts, omega=1, convVal=1E-3){
       ii=ii+1
       ifelse(ome>=1e-2, ome<-ome*0.6, ifelse(ome >= 1e-5, ome<- ome*5e-2,ifelse(ome>1e-20,ome<-ome*1e-5,break)))        
       Theta <- Theta0 + ome*StepTheta
+      ##FIXME check with Jun
+      #Theta[Theta<10E-3] = 10E-3
+      
       pars0[gfun_inds] <- Theta
       pars_obj <- split_pars2obj(pars_obj, pars0)
       ploglik <- pllik(pars_obj, wts=wts)
@@ -280,6 +299,7 @@ NewtonMi <- function(pars_obj, maxiters=50, wts, omega=1, convVal=1E-3){
   G <- compute_G(H, pars_obj)
   return(list(par=pars0, pars_obj=pars_obj, hessian=G, value=ploglik0, iter=iter))
 }
+
 
 
 llik <- function(pars_obj){
@@ -302,11 +322,27 @@ pllik <- function(pars_obj, wts){
 density0 <- function(pars_obj){
   g  <- gfun(pars_obj)
   dg <- dgfun(pars_obj)
-  return(dg*exp(g)/(1+exp(g))^2)
+  h <- 0
+  for (p4 in pars_obj){
+    if (p4$type == 'fix.eff'){
+      h <- h + sum(apply(p4$mat,2,mean) * p4$pars)
+    } else if (p4$type=="gfun"){
+      h <- h
+    } else if (p4$type=="rnd.eff"){
+      h <- h
+    } else if (p4$type=="smoother"){
+      # ii=which.min(abs(p4$v-mean(p4$v)))
+      # h <- h + sum(p4$mat[ii,]*p4$par)
+      h <- h
+    }
+  }
+  print(h)
+  h <- rep(h, length(g))
+  return(dg*exp(g+h)/(1+exp(g+h))^2)
 }
 
 penalty <- function(pars_obj){
-  pen_index = which(sapply(pars_obj, function(x)x$estimate_lambda))
+  pen_index = which(sapply(pars_obj, function(x)x$use_lambda))
   if (length(pen_index)==0){
     pen=0
   } else {
@@ -379,7 +415,7 @@ gradp <- function(pars_obj){
 
 
 compute_G <- function(H, pars_obj){
-  pen_index = which(sapply(pars_obj, function(x)x$estimate_lambda))
+  pen_index = which(sapply(pars_obj, function(x)x$use_lambda))
   if (length(pen_index)==0){
     return(H)
   } else {
@@ -392,7 +428,7 @@ compute_G <- function(H, pars_obj){
 
 compute_Rstar <- function(pars_obj){
   #FIXME optimise
-  pen_index = which(sapply(pars_obj, function(x)x$estimate_lambda))
+  pen_index = which(sapply(pars_obj, function(x)x$use_lambda))
   if (length(pen_index)>0){
     Rs=lapply(pen_index, function(i){with(pars_obj[[i]], R)})
     rubric <- make_rubric(pars_obj)

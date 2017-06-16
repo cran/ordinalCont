@@ -21,12 +21,11 @@ Plot method for class \code{predict.ocm}
 \details{
 The probability densities from \code{predict.ocm}  are plotted.
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \seealso{
 \code{\link{predict.ocm}}, \code{\link{ocm}}
 }
+\author{
+Maurizio Manuguerra, Gillian Heller
+}
 \keyword{plot}
 \keyword{predict,}
-

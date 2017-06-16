@@ -36,9 +36,6 @@ fit.overall  <- ocm(overall  ~ cycleno + age + bsa + treatment, data=ANZ0001.sub
 extractAIC(fit.overall)
 }
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \references{
 Akaike, H (1983). 
 Information measures and model selection, 
@@ -47,4 +44,6 @@ Information measures and model selection,
 \seealso{
 \code{\link{ocm}}
 }
-
+\author{
+Maurizio Manuguerra, Gillian Heller
+}

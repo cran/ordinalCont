@@ -24,12 +24,11 @@ Prints \code{anova.ocm} object
 \description{
 Print the results of the comparison of continuous ordinal models in likelihood ratio tests.
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \seealso{
 \code{\link{ocm}}, \code{\link{anova.ocm}}
 }
+\author{
+Maurizio Manuguerra, Gillian Heller
+}
 \keyword{anova}
 \keyword{summary,}
-

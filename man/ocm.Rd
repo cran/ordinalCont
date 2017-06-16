@@ -5,7 +5,8 @@
 \title{Ordinal regression for continuous scales}
 \usage{
 ocm(formula, data = NULL, scale = c(0, 1), weights, link = c("logit"),
-  niters = c(500, 500), conv_crit = 0.01)
+  niters = c(500, 500), conv_crit = 0.01, n.int.knots = NULL, order = 4,
+  lambdas = NA)
 }
 \arguments{
 \item{formula}{a formula expression as for regression models, of the form 
@@ -32,6 +33,12 @@ estimates of the parameters of the model. Default is \code{c(500,500)}}
 
 \item{conv_crit}{the smoothing parameters \eqn{\lambda}'s convergence criteria for the iterative process. 
 Default is \eqn{0.01}}
+
+\item{n.int.knots}{the number of internal knots used to compute the spline bases. The default (NULL) is round((n-1-order)*0.8) if in the interval [8,15], and 8 or 15 otherwise.}
+
+\item{order}{the order of the spline functions. The default is 4 (cubic splines).}
+
+\item{lambdas}{NA (the default) or a vector of length equal to the number of smoothing terms, including the g function and, optionally, the random effect terms and the smooters. If ``lambdas'' is a vector, each element \eqn{\lambda_i} can be a number, in which case the corresponding term is penalized using \eqn{\lambda_i} as smoothing parameter, zero, in which case the corresponding term is unpenalized, or NA, in which case the value of \eqn{\lambda_i} is estimated maximmizing the marginal posterior function.}
 }
 \value{
 an object of type \code{ocm} with the components listed below. Parameter estimates are in \code{coefficients}. 
@@ -85,4 +92,3 @@ Maurizio Manuguerra, Gillian Heller
 \keyword{log-likelihood,}
 \keyword{ordinal}
 \keyword{regression.}
-

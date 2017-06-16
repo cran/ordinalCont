@@ -26,9 +26,6 @@ the logit link, which corresponds to a standard logistic distribution, is implem
 maximized using the \code{MI} algorithm (Ma, 2010). Fixed- and mixed-effects models are implemented 
 in the function \code{\link{ocm}}.
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \references{
 Manuguerra M, Heller GZ (2010). Ordinal Regression Models for Continuous 
  Scales, \emph{The International Journal of Biostatistics}: 6(1), Article 14.
@@ -41,4 +38,6 @@ Penalized Likelihood Tomographic Reconstruction, \emph{Nuclear Science} 57 (1): 
 
 Ramsay, J. O. (1988). Monotone regression splines in action. \emph{Statistical science}, 425-441.
 }
-
+\author{
+Maurizio Manuguerra, Gillian Heller
+}

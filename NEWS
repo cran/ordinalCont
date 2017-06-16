@@ -1,0 +1,10 @@
+ordinalCont v1.2 (Release date: 2017-06-16)
+==============
+
+Changes:
+
+* non-parametric functions now with mean zero
+* new parameters in the ocm function (n.int.knots and order)
+* plot.ocm can now plot individual graphs
+* possibility of choosing smoothing parameters
+* no density graph in plot.ocm

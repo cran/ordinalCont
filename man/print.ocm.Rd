@@ -18,12 +18,11 @@ Prints an \code{ocm} object
 \code{print.ocm} is the ordinalCont specific method for the generic function \code{print}, 
 which prints objects of class \code{ocm}.
 }
-\author{
-Maurizio Manuguerra, Gillian Heller
-}
 \seealso{
 \code{\link{ocm}}, \code{\link{summary.ocm}}
 }
+\author{
+Maurizio Manuguerra, Gillian Heller
+}
 \keyword{likelihood,}
 \keyword{log-likelihood.}
-

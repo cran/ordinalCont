@@ -30,6 +30,7 @@ basis2_mpl = function(x, knots, order, which=c(1,2,3),  outer.ok = F, splines=c(
   } else if (splines=="isplines"){
     PSIs= MsplineDesign(Alpha_star, x, ord=order, outer.ok = outer.ok)
     M_Psi_nm   = PSIs[[1]][,3:(m+2)]
+    M_Psi_nm - matrix(apply(M_Psi_nm,2,mean),nrow=n,ncol=m,byrow = T)
     M_psi_nm   = PSIs[[2]][,3:(m+2)]
     M_psi22_nm = PSIs[[3]][,3:(m+2)]
   } else {
