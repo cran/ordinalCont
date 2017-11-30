@@ -1,6 +1,6 @@
 Package: ordinalCont
 Title: Ordinal Regression Analysis for Continuous Scales
-Version: 1.2
+Version: 1.2.2
 Authors@R: c(person("Maurizio Manuguerra", role = c("aut", "cre"),
   	     email = "maurizio.manuguerra@mq.edu.au"),
 	      person("Gillian Heller", role = "aut", email = "gillian.heller@mq.edu.au"))
@@ -17,11 +17,11 @@ Description: A regression framework for response variables which are continuous
     continuous latent variable. The link function is the inverse of the CDF of the
     assumed underlying distribution of the latent variable. Currently the logit
     link, which corresponds to a standard logistic distribution, is implemented.
-Depends: R (>= 3.1.1), boot, splines
+Depends: R (>= 3.3.3), boot, splines
 License: GPL (>= 2)
 LazyData: true
 RoxygenNote: 6.0.1
 NeedsCompilation: no
-Packaged: 2017-06-15 23:50:09 UTC; manuguerra
+Packaged: 2017-11-30 06:26:52 UTC; manuguerra
 Repository: CRAN
-Date/Publication: 2017-06-16 18:10:21 UTC
+Date/Publication: 2017-11-30 06:34:27 UTC

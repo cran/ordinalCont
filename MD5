@@ -1,12 +1,12 @@
-333f9c1399ddcf18a5087b46e47adc0d *DESCRIPTION
+376bd47be6a2a4efcea965122865d48c *DESCRIPTION
 9fa203cabca31b5b3de3b78bec388c3b *NAMESPACE
-4557fbf4b18bce360f3a0cbdd61212d7 *NEWS
+9cc39e7d1af85c10bd1c5fa0c1fb63b8 *NEWS
 250d3c57edcf9acb1d43ede9a236dff1 *R/gfunction.R
 1a00b3e56e00b2c4340b58088a596d6b *R/ocm.R
-954076d5f757364cc0c5379ec8a7c968 *R/ocm.methods.R
+6c7e78a534f53baceaa222dc12c16c2b *R/ocm.methods.R
 273a71d251aa5333e9206c06b1071812 *R/ordinalCont.R
 a52663819d68e02d0ac76cdb43b2f6f6 *R/splines.R
-4169354429d6707b002568e67c2afe8f *R/utils.R
+98c61977802afe0838493b5219f134cf *R/utils.R
 3690fe7c0d529fa2adf42a96a35bd7f2 *data/ANZ0001.rda
 a0b0afbd8c39aeecb1ffa06d6c228085 *data/ANZ0001.sub.rda
 1e33aff9bc2f159cac207d018edc5fa4 *man/ANZ0001.Rd
@@ -17,7 +17,7 @@ dbfacbf790a826c568f43f6930a04398 *man/extractAIC.ocm.Rd
 13b8cd20ba9d15ef1cec79a82e881656 *man/negloglik4.Rd
 bc7f17a710d3844ee744b0884228b72e *man/ocm.Rd
 033a2650e49169c71b86b3e0901625a1 *man/ordinalCont-package.Rd
-2c48100af92016c50e5bb4e5003b1020 *man/plot.ocm.Rd
+93666922229e71efffdbb389deea41a8 *man/plot.ocm.Rd
 d8e1559d439c2a9a5a02d8290db73c3e *man/plot.predict.ocm.Rd
 231b0e518970367f2fdb6cad3d02cf66 *man/predict.ocm.Rd
 53b00d6b6d47817f8ad802da4f548e5d *man/print.anova.ocm.Rd

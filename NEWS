@@ -8,3 +8,11 @@ Changes:
 * plot.ocm can now plot individual graphs
 * possibility of choosing smoothing parameters
 * no density graph in plot.ocm
+
+ordinalCont v1.2.2 (Release date: 2017-11-30)
+==============
+
+Changes:
+
+* predict.ocm bug fixes
+* extra parameters in plot.ocm

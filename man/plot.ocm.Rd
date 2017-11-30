@@ -4,14 +4,16 @@
 \alias{plot.ocm}
 \title{Plot method for Continuous Ordinal Fits}
 \usage{
-\method{plot}{ocm}(x, CIs = c("vcov", "no", "rnd.x.bootstrap",
-  "fix.x.bootstrap", "param.bootstrap"), R = 100, main_gfun = "g function",
-  main_density = "Density function when X=0",
+\method{plot}{ocm}(x, plot.only = NULL, CIs = c("vcov", "no",
+  "rnd.x.bootstrap", "fix.x.bootstrap", "param.bootstrap"), R = 100,
+  main_gfun = "g function", main_density = "Density function when X=0",
   xlab = "Continuous ordinal scale [v]", CIcol = "lightblue",
   individual_plots = F, ...)
 }
 \arguments{
 \item{x}{an object of class \code{ocm}}
+
+\item{plot.only}{either NULL, in which case all plots are displayed, or a value among "gfun", "quant_resid", "QQplot" or "smoother", in which case only the requested plot is displayed.}
 
 \item{CIs}{method used for confidence bands for the g function. \code{"vcov"} = Wald [default]; \code{"no"} = no CIS;
 \code{"rnd.x.bootstrap"} = random-x bootstrap; \code{"fix.x.bootstrap"} = bootstrap with fixed-x 

@@ -189,7 +189,10 @@ predict.ocm <- function(object, newdata=NULL, ndens=10, ...)
   for (subject in 1:nrow(newdata)){
     d.matrix = newdata[rep(subject,ndens),]
     wts = rep(newweights[subject],ndens)
-    pars_obj=ocmPars(formula, d.matrix, v)
+    len=sapply(pars_obj_fit,function(x)x$len)
+    order=sapply(pars_obj_fit,function(x)x$order)
+    n.int.knots=(len-order+1)[inds$gfun]
+    pars_obj=ocmPars(formula, d.matrix, v, n.int.knots=n.int.knots)
     new_types <- sapply(pars_obj, function(obj)obj$type)
     if (!all(new_types == fit_types)) stop("New data are not compatible with those used in fit.")
     #fix terms
@@ -201,6 +204,11 @@ predict.ocm <- function(object, newdata=NULL, ndens=10, ...)
     mat=bases$Psi
     mat1=bases$psi
     mat2=bases$psi2
+    vars=apply(mat,2,var)
+    idrop=which.min(vars)
+    mat=mat[,-idrop]
+    mat1=mat1[,-idrop]
+    mat2=mat2[,-idrop]
     R <- formR2(v, mat2)
     pars_obj[[inds$gfun]]$mat = mat
     pars_obj[[inds$gfun]]$mat1 = mat1
@@ -216,17 +224,21 @@ predict.ocm <- function(object, newdata=NULL, ndens=10, ...)
     #smooth terms
     if (length(inds$smoother)>0){
       for (ii in inds$smoother){
-        pars_obj[[ii]]$pars = pars_obj_fit[[ii]]$pars
-        pars_obj[[ii]]$lambda = pars_obj_fit[[ii]]$lambda
-        bases  <- basis2_mpl(pars_obj[[ii]]$v,knots=pars_obj_fit[[ii]]$knots,order=pars_obj_fit[[ii]]$order,which=c(1,2,3), splines="bsplines")
-        mat=bases$Psi
-        mat1=bases$psi
-        mat2=bases$psi2
-        R <- formR2(pars_obj[[ii]]$v, mat2)
-        pars_obj[[ii]]$mat = mat
-        pars_obj[[ii]]$mat1 = mat1
-        pars_obj[[ii]]$R = R
-        pars_obj[[ii]]$len = nrow(R)
+        pars_obj[[ii]] <- pars_obj_fit[[ii]]
+        pars_obj[[ii]]$mat <- matrix(rep(pars_obj[[ii]]$mat[subject,], ndens),nrow=ndens, byrow=T)
+        pars_obj[[ii]]$mat1 <- matrix(rep(pars_obj[[ii]]$mat1[subject,], ndens),nrow=ndens, byrow=T)
+        
+        # pars_obj[[ii]]$pars = pars_obj_fit[[ii]]$pars
+        # pars_obj[[ii]]$lambda = pars_obj_fit[[ii]]$lambda
+        # bases  <- basis2_mpl(pars_obj[[ii]]$v,knots=pars_obj_fit[[ii]]$knots,order=pars_obj_fit[[ii]]$order,which=c(1,2,3), splines="bsplines")
+        # mat=bases$Psi
+        # mat1=bases$psi
+        # mat2=bases$psi2
+        # R <- formR2(pars_obj[[ii]]$v, mat2)
+        # pars_obj[[ii]]$mat = mat
+        # pars_obj[[ii]]$mat1 = mat1
+        # pars_obj[[ii]]$R = R
+        # pars_obj[[ii]]$len = nrow(R)
       }
     }
     pars_obj <- compute_Rstar(pars_obj)
@@ -295,6 +307,7 @@ plot.predict.ocm <- function(x, records=NULL, ...)
 #' the estimated density function of the continuous ordinal score for the null model (no covariates), 
 #' the histogram of the quantile residuals, the normal Q-Q plot and any smoother included in the model.
 #' @param x an object of class \code{ocm}
+#' @param plot.only either NULL, in which case all plots are displayed, or a value among "gfun", "quant_resid", "QQplot" or "smoother", in which case only the requested plot is displayed.
 #' @param CIs method used for confidence bands for the g function. \code{"vcov"} = Wald [default]; \code{"no"} = no CIS;  
 #' \code{"rnd.x.bootstrap"} = random-x bootstrap; \code{"fix.x.bootstrap"} = bootstrap with fixed-x 
 #' resampling; \code{"param.bootstrap"} = parametric bootstrap 
@@ -321,7 +334,7 @@ plot.predict.ocm <- function(x, records=NULL, ...)
 #' }
 #' @author Maurizio Manuguerra, Gillian Heller
 
-plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap','param.bootstrap'), R = 100, main_gfun="g function", main_density="Density function when X=0", xlab="Continuous ordinal scale [v]", CIcol = 'lightblue', individual_plots=F, ...)
+plot.ocm <- function(x, plot.only=NULL, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap','param.bootstrap'), R = 100, main_gfun="g function", main_density="Density function when X=0", xlab="Continuous ordinal scale [v]", CIcol = 'lightblue', individual_plots=F, ...)
 {
   pars_obj <- x[[2]]
   inds <- ind_pars_obj(pars_obj)
@@ -358,10 +371,10 @@ plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap'
     pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars <- pars_obj[[inds$gfun]]$pars + 1.96*sevg; ci_high = intercept +  as.numeric(gfun(pars_obj_tmp))
     
     # #Warning: estimated parameter for the i-spline are not mvnormal, as they need to be positive (truncated mvnormal)
-     mat=pars_obj_tmp[[inds$gfun]]$mat
-     se_g <- diag(mat %*% tcrossprod(vcov_g,mat)) ^ .5
-     ci_low  = (intercept + as.numeric(mat %*% vg) - 1.96*se_g)
-     ci_high = (intercept + as.numeric(mat %*% vg) + 1.96*se_g)
+    mat=pars_obj_tmp[[inds$gfun]]$mat
+    se_g <- diag(mat %*% tcrossprod(vcov_g,mat)) ^ .5
+    ci_low  = (intercept + as.numeric(mat %*% vg) - 1.96*se_g)
+    ci_high = (intercept + as.numeric(mat %*% vg) + 1.96*se_g)
     
     # rparams <- mvrnormR(R, pars_obj[[inds$gfun]]$pars, vcov_g)
     # #rparams[rparams<0] <- 0
@@ -387,19 +400,22 @@ plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap'
     ci_high <- apply(all_gfuns, 2, function(x)quantile(x, 0.975)) 
     ylim <- c(min(ci_low), max(ci_high))
   }
-  plot(v, gfun, main=main_gfun, xlim = xlim, ylim = ylim, xlab=xlab, ylab = "g(v)", t='l')
-  #CIs
-  if (CIs != 'no'){
-    #lines(v, ci_low, lty = 2)
-    #lines(v, ci_high, lty = 2)
-    polygon(c(v, rev(v)),c(ci_low,rev(ci_high)), col = CIcol)
-    lines(v,gfun) #to superimpose gfun estimate on shaded area
-    #if (CIs=='vcov' | CIs=='rnd.x.bootstrap' | CIs=='fix.x.bootstrap') lines(v, ci_median, lty = 2)
+  if (is.null(plot.only) | (if (!is.null(plot.only)) plot.only=="gfun" else FALSE)){
+    
+    plot(v, gfun, main=main_gfun, xlim = xlim, ylim = ylim, xlab=xlab, ylab = "g(v)", t='l', ...)
+    #CIs
+    if (CIs != 'no'){
+      #lines(v, ci_low, lty = 2)
+      #lines(v, ci_high, lty = 2)
+      polygon(c(v, rev(v)),c(ci_low,rev(ci_high)), col = CIcol)
+      lines(v,gfun) #to superimpose gfun estimate on shaded area
+      #if (CIs=='vcov' | CIs=='rnd.x.bootstrap' | CIs=='fix.x.bootstrap') lines(v, ci_median, lty = 2)
+    }
+    lines(c(.5,.5), ylim, col='grey')
+    lines(xlim, c(0, 0), col='grey')
+    lines(v,gfun0,lty=21)
+    legend('topleft', c("g function","Std logit"), lty=c(19,21))
   }
-  lines(c(.5,.5), ylim, col='grey')
-  lines(xlim, c(0, 0), col='grey')
-  lines(v,gfun0,lty=21)
-  legend('topleft', c("g function","Std logit"), lty=c(19,21))
   if (individual_plots)readline("Press any key to continue.\n")
   # ########### PLOT 2
   # #Density - no covs
@@ -414,19 +430,24 @@ plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap'
   #Quantile residuals
   qres <- qnorm((CDF(pars_obj)))
   #plot(x$v, qres, main="Quantile residuals", xlab="v", ylab="Residual")
-  hist(qres, main="Quantile residuals", xlab="Quantile residuals", prob=T, xlim=c(min(qres)-.2*abs(min(qres)), max(qres)+.2*abs(max(qres))))
-  lines(density(qres, bw=0.5))
-  rug(qres)
+  if (is.null(plot.only) | (if (!is.null(plot.only)) plot.only=="quant_resid" else FALSE)){
+    
+    hist(qres, main="Quantile residuals", xlab="Quantile residuals", prob=T, xlim=c(min(qres)-.2*abs(min(qres)), max(qres)+.2*abs(max(qres))), ...)
+    lines(density(qres, bw=0.5))
+    rug(qres)
+  }
   if (individual_plots)readline("Press any key to continue.\n")
   
   ########### PLOT 4 
-  #QQ plot
-  #hist(qres,n=20, main="Quantile residuals distribution", xlab=xlab)
-  qqnorm(qres)
-  #qqline(qres)
-  lines(x=c(-100,100),y=c(-100,100))
-  
+  if (is.null(plot.only) | (if (!is.null(plot.only)) plot.only=="QQplot" else FALSE)){
+    #QQ plot
+    #hist(qres,n=20, main="Quantile residuals distribution", xlab=xlab)
+    qqnorm(qres, ...)
+    #qqline(qres)
+    lines(x=c(-100,100),y=c(-100,100))
+  }
   ########### Additional plots
+  
   if (N_smooth_terms>0){
     if (N_smooth_terms>1){
       cat('There are', N_smooth_terms, "smoothing terms in the model:\n")
@@ -480,35 +501,45 @@ plot.ocm <- function(x, CIs = c('vcov','no', 'rnd.x.bootstrap','fix.x.bootstrap'
       }
     }
     ii=0 #needed for drawing legend, don't delete
-    for (i in 1:N_smooth_terms){
-      ones=which(which.plot==1)
-      #plot
-      if (which.plot[i]==1){
-        next.one=ones[ones>i]
-        if (length(next.one)==1){
-          ii= i:(next.one-1)
+    if (is.null(plot.only) | (if (!is.null(plot.only)) plot.only=="smoother" else FALSE)){
+      
+      for (i in 1:N_smooth_terms){
+        ones=which(which.plot==1)
+        #plot
+        if (which.plot[i]==1){
+          next.one=ones[ones>i]
+          if (length(next.one)==1){
+            ii= i:(next.one-1)
+          } else {
+            ii= i:N_smooth_terms
+          }
+          if (CIs!='no'){
+            ylim <- c(min(unlist(ci_low[ii])), max(unlist(ci_high[ii])))
+          } else {
+            ylim <- range(sfun[[i]])
+          }
+          xlim <- range(unlist(vv[ii]))
+          if (length(grpnames)>1){
+            main=grpnames[[i]]
+          } else {
+            main=""
+          }
+          plot(vv[[i]],sfun[[i]], main=main, t='l', xlab="v", ylab="s(v)", xlim=xlim, ylim=ylim, ...)
         } else {
-          ii= i:N_smooth_terms
+          lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1]))
         }
+        #CI
         if (CIs!='no'){
-          ylim <- c(min(unlist(ci_low[ii])), max(unlist(ci_high[ii])))
-        } else {
-          ylim <- range(sfun[[i]])
+          xcol <- col2rgb(CIcol)/255
+          polygon(c(vv[[i]], rev(vv[[i]])),c(ci_low[[i]],rev(ci_high[[i]])), col = rgb(xcol[1],xcol[2],xcol[3],alpha=0.5))
+          lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1])) #to superimpose gfun estimate on shaded area
         }
-        xlim <- range(unlist(vv[ii]))
-        plot(vv[[i]],sfun[[i]], main=grpnames[[i]], t='l', xlab="v", ylab="s(v)", xlim=xlim, ylim=ylim)
-      } else {
-        lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1]))
+        #legend
+        #if (i==tail(ii,1)) legend('topleft', unlist(grpnames[ii]), lty=(18+(1:length(ii))))
+        if (i==tail(ii,1) & length(ii)>1) legend('topleft', unlist(grpnames[ii]), lty=(18+(1:length(ii))))
       }
-      #CI
-      if (CIs!='no'){
-        xcol <- col2rgb(CIcol)/255
-        polygon(c(vv[[i]], rev(vv[[i]])),c(ci_low[[i]],rev(ci_high[[i]])), col = rgb(xcol[1],xcol[2],xcol[3],alpha=0.5))
-        lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1])) #to superimpose gfun estimate on shaded area
-      }
-      #legend
-      if (i==tail(ii,1)) legend('topleft', unlist(grpnames[ii]), lty=(18+(1:length(ii))))
     }
+    if (!individual_plots) par(mfrow=c(1,1))
   }
   par(mfrow=c(1,1))
 }
@@ -557,6 +588,8 @@ anova.ocm <- function(object, ...)
   if(length(dots) == 0)
     stop('anova is not implemented for a single "ocm" object')
   mlist <- c(list(object), dots)
+  nn <- as.character(sapply(as.list(match.call()),as.character)[-1])
+  if (any(duplicated(nn))) stop("Duplicated model names are not allowed.")
   if(!all(sapply(mlist, function(model)
     inherits(model, c("ocm")))))
     stop("only 'ocm' objects are allowed")
@@ -566,10 +599,11 @@ anova.ocm <- function(object, ...)
   no.par <- sapply(mlist, function(x) x$edf)
   ## order list with increasing no. par:
   ord <- order(no.par, decreasing=FALSE)
-  cat(no.par,"\n")
-  cat(ord,"\n")
+  #cat(no.par,"\n")
+  #cat(ord,"\n")
   mlist <- mlist[ord]
   no.par <- no.par[ord]
+  nn <- nn[ord]
   no.tests <- length(mlist)
   ## extract formulas, links, gfun:
   forms <- sapply(mlist, function(x) deparse(x$call$formula))
@@ -593,7 +627,7 @@ anova.ocm <- function(object, ...)
   colnames(tab) <- tab.names
   #mnames <- sapply(as.list(mc), deparse)[-1]
   #rownames(tab) <- rownames(models) <- mnames[ord]
-  rownames(tab) <- rownames(models) <- paste("Model ",1:length(mlist),":",sep='')
+  rownames(tab) <- rownames(models) <- nn #paste("Model ",1:length(mlist),":",sep='')
   colnames(models) <- models.names
   attr(tab, "models") <- models
   attr(tab, "heading") <-

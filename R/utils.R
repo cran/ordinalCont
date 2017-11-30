@@ -16,7 +16,7 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
     max.n = max(8,round((n-1-order)*0.8))
     if (is.null(n.int.knots)) n.int.knots=ifelse(max.n<15, max.n, 15) #TODO rewrite log interpolation
     #if (n.knots==0) n.knots=ifelse(n<50, n, ifelse(n<=3200,round(49+exp(2.1408+0.3573*log(max.n-49))),round(200+(max.n-3200)^0.2))) #TODO rewrite log interpolation
-    len = (n.int.knots+order)-1
+    len = (n.int.knots+order-1)
     pars <- rep(1, len) #runif(len) 
     names(pars) = paste("g function: theta",1:len)
     knots  <- knots2_mpl(unique(v), range(v), order=order, n.int.knots=n.int.knots, splines="isplines")
@@ -103,7 +103,7 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
 }
 
 
-ocmPars <- function(formula, data, v, n.int.knots, order){
+ocmPars <- function(formula, data, v, n.int.knots=NULL, order=4){
   ##########################
   #fix, smooth and rnd terms
   ##########################
