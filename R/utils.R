@@ -102,7 +102,6 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
   return(obj)
 }
 
-
 ocmPars <- function(formula, data, v, n.int.knots=NULL, order=4){
   ##########################
   #fix, smooth and rnd terms
@@ -212,6 +211,73 @@ ocmPars <- function(formula, data, v, n.int.knots=NULL, order=4){
   #print(str(obj))
   obj
 }
+#######################################################################################
+ocmTerms <- function(formula, data, random.terms = TRUE, ...){
+  ##########################
+  #fix, smooth and rnd terms
+  ##########################
+  if (attributes(terms(formula))$intercept != 0) formula <- update(formula, .~.-1) 
+  terms <- attributes(terms(formula))$term.labels
+  i_rnd <- which(sapply(terms,function(x)grepl("|", x, fixed=T)))
+  i_s <- which(sapply(terms,function(x)grepl("s(", x, fixed=T)))
+  #############
+  #FIX effects
+  #############
+  remove_ind = c(i_rnd, i_s)
+  i_fix <- (1:length(terms))
+  if (length(remove_ind)>0) i_fix <- i_fix[-remove_ind]
+  if (length(i_fix)>0){
+    fixterms <- terms[i_fix]
+    nf.fix <- paste(fixterms, collapse="+")
+    nf.fix <- paste("~ 1 +", nf.fix)
+  }else{
+    fixterms <- NULL
+    nf.fix <- "~ 1"
+  }
+  nf.all=nf.fix
+  # form.fix <- update(formula, as.formula(nf.fix))
+  # mf.fix <- model.frame(formula=form.fix, data=data)
+  # x <- model.matrix(attr(mf.fix, "terms"), data=mf.fix)
+  ############
+  #RND effects
+  ############
+  if (random.terms){
+    nrndterms <- length(i_rnd)
+    if (nrndterms>0){
+      for (i in 1:nrndterms){
+        name <- terms[i_rnd[i]]
+        ibar <- regexpr("|",name,fixed=T)
+        left <- trim(substr(name,1,ibar-1))
+        left_vars <- attributes(terms(as.formula(paste("~",left))))$term.labels
+        right <- trim(substr(name,ibar+1, nchar(name)))
+        if (any(sapply(c(":","*","|"), function(x)grepl(x, right,fixed=T)))) stop("Syntax incorrect or feature not implemented.")
+        right_vars <- attributes(terms(as.formula(paste("~",right))))$term.labels
+        nf.rnd <- paste(unique(c(left_vars,right_vars)), collapse="+")
+        nf.rnd <- paste("(", nf.rnd, ")", sep='')
+        if (nf.rnd!="") nf.all=paste(nf.all,"+", nf.rnd)
+      }
+    }
+  }
+  #############
+  #SMOOTH terms
+  #############
+  nsmoothterms <- length(i_s)
+  smoothterms <- terms[i_s]
+  if (nsmoothterms>0){
+    for (i in 1:nsmoothterms){
+      var=terms[i_s[i]] #smooth
+      var_naked = gsub("s(","",var, fixed=T)
+      var_naked = gsub(")","",var_naked, fixed=T)
+      if (var_naked!="") nf.all=paste(nf.all,"+", var_naked)
+    }
+  }
+  fml <- update(formula, as.formula(nf.all))
+  mf=model.frame(formula=fml, data, ...)
+  mm=model.matrix(fml, data, ...)
+  return(list(terms=terms(fml), mf=mf, mm=mm))
+}
+
+
 #######################################################################################
 reset.rnd.eff <- function(pars_obj){
   rnd.eff_index = which(sapply(pars_obj, function(x)x$type)=="rnd.eff")

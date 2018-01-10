@@ -32,11 +32,17 @@ NULL
 
 #' @title ANZ0001 trial
 #' @description The complete ANZ0001 trial data set
-#' @details  The ANZ0001 trial, conducted by the ANZ Breast Cancer Trials Group, is an unblinded, multi-centre, randomized trial with three chemotherapy treatment arms, concluded in 2005 (Stockler et al 2007). 
-#' Health-related quality of life measures (Overall quality of life, Physical Well-Being, Mood, Pain, Nausea and Vomiting, Appetite) are assessed at each chemotherapy treatment cycle, from randomization until disease progression, when treatment is interrupted. 
-#' The treatments Intermittent Capecitabine (IC) and Continuous Capecitabine (CC) are compared with the standard combination treatment CMF, each with its own protocol. 
-#' There is no maximum duration of treatment, but it is interrupted on disease progression, or when patient intolerance or unacceptable toxicity are recorded.
-#' The data set is extracted from the ANZ0001 trial and contains information from 292 patients with complete quality of life measurements.
+#' @details  The ANZ0001 trial, conducted by the ANZ Breast Cancer Trials Group, is an unblinded, multi-centre, 
+#' randomized trial with three chemotherapy treatment arms, concluded in 2005 (Stockler et al 2007). 
+#' Health-related quality of life measures (Overall quality of life, Physical Well-Being, Mood, Pain, Nausea and 
+#' Vomiting, Appetite) are assessed at each chemotherapy treatment cycle, from randomization until 
+#' disease progression, when treatment is interrupted. 
+#' The treatments Intermittent Capecitabine (IC) and Continuous Capecitabine (CC) are compared with the 
+#' standard combination treatment CMF, each with its own protocol. 
+#' There is no maximum duration of treatment, but it is interrupted on disease progression, or when patient 
+#' intolerance or unacceptable toxicity are recorded.
+#' The data set is extracted from the ANZ0001 trial and contains information from 292 patients with complete 
+#' quality of life measurements.
 #'
 #' The variables are as follows:
 #'
@@ -58,17 +64,26 @@ NULL
 #' @keywords datasets
 #' @name ANZ0001
 #' @usage data(ANZ0001)
-#' @references Stockler, M., T. Sourjina, P. Grimison, V. Gebski, M. Byrne, V. Harvey, P. Francis et al. ``A randomized trial of capecitabine (C) given intermittently (IC) rather than continuously (CC) compared to classical CMF as first-line chemotherapy for advanced breast cancer (ABC).'' In \emph{ASCO Annual Meeting Proceedings}, vol. 25, no. 18_suppl, p. 1031. 2007.
+#' @references Stockler, M., T. Sourjina, P. Grimison, V. Gebski, M. Byrne, V. Harvey, P. Francis et al. 
+#' ``A randomized trial of capecitabine (C) given intermittently (IC) rather than continuously (CC) compared 
+#' to classical CMF as first-line chemotherapy for advanced breast cancer (ABC).'' In \emph{ASCO Annual Meeting 
+#' Proceedings}, vol. 25, no. 18_suppl, p. 1031. 2007.
 #' @format A data frame with 2473 rows and 11 variables
 NULL
 
 #' @title ANZ0001 trial subset
 #' @description A subset from the ANZ0001 trial data set
-#' @details  The ANZ0001 trial, conducted by the ANZ Breast Cancer Trials Group, is an unblinded, multi-centre, randomized trial with three chemotherapy treatment arms, concluded in 2005 (Stockler et al 2007). 
-#' Health-related quality of life measures (Overall quality of life, Physical Well-Being, Mood, Pain, Nausea and Vomiting, Appetite) are assessed at each chemotherapy treatment cycle, from randomization until disease progression, when treatment is interrupted. 
-#' The treatments Intermittent Capecitabine (IC) and Continuous Capecitabine (CC) are compared with the standard combination treatment CMF, each with its own protocol. 
-#' There is no maximum duration of treatment, but it is interrupted on disease progression, or when patient intolerance or unacceptable toxicity are recorded.
-#' The data set is extracted from the ANZ0001 trial and contains information from a subset of 292 patients with complete quality of life measurements, limited to cycle numbers 0 and 5.
+#' @details  The ANZ0001 trial, conducted by the ANZ Breast Cancer Trials Group, is an unblinded, multi-centre, 
+#' randomized trial with three chemotherapy treatment arms, concluded in 2005 (Stockler et al 2007). 
+#' Health-related quality of life measures (Overall quality of life, Physical Well-Being, Mood, Pain, Nausea and 
+#' Vomiting, Appetite) are assessed at each chemotherapy treatment cycle, from randomization until disease 
+#' progression, when treatment is interrupted. 
+#' The treatments Intermittent Capecitabine (IC) and Continuous Capecitabine (CC) are compared with the 
+#' standard combination treatment CMF, each with its own protocol. 
+#' There is no maximum duration of treatment, but it is interrupted on disease progression, or when 
+#' patient intolerance or unacceptable toxicity are recorded.
+#' The data set is extracted from the ANZ0001 trial and contains information from a subset of 292 patients 
+#' with complete quality of life measurements, limited to cycle numbers 0 and 5.
 #'
 #' The variables are as follows:
 #'
@@ -90,6 +105,36 @@ NULL
 #' @keywords datasets
 #' @name ANZ0001.sub
 #' @usage data(ANZ0001.sub)
-#' @references Stockler, M., T. Sourjina, P. Grimison, V. Gebski, M. Byrne, V. Harvey, P. Francis et al. ``A randomized trial of capecitabine (C) given intermittently (IC) rather than continuously (CC) compared to classical CMF as first-line chemotherapy for advanced breast cancer (ABC).'' In \emph{ASCO Annual Meeting Proceedings}, vol. 25, no. 18_suppl, p. 1031. 2007.
+#' @references Stockler, M., T. Sourjina, P. Grimison, V. Gebski, M. Byrne, V. Harvey, P. Francis et al. 
+#' ``A randomized trial of capecitabine (C) given intermittently (IC) rather than continuously (CC) compared to 
+#' classical CMF as first-line chemotherapy for advanced breast cancer (ABC).'' In \emph{ASCO Annual Meeting 
+#' Proceedings}, vol. 25, no. 18_suppl, p. 1031. 2007.
 #' @format A data frame with 428 rows and 11 variables
+NULL
+
+#' @title Neck pain data set
+#' @description A subset from an Australian chronic neck pain study 
+#' @details  A randomized, double-blind, placebo-controlled study of low-level laser therapy (LLLT) in 88 
+#' subjects with chronic neck pain was conducted with the aim of determining the efficacy of 300 mW, 
+#' 830 nm laser in the management of chronic neck pain. Subjects were randomized to receive a course of 
+#' 14 treatments over 7 weeks with either active or sham laser to tender areas in the neck. The primary 
+#' outcome measure was change in a 10 cm Visual Analogue Scale (VAS) for pain.
+#' Measurements were taken at baseline, at the end of 7 weeks\' treatment and 12 weeks from baseline.
+#'
+#' The variables are as follows:
+#'
+#' \tabular{ll}{
+#' \code{id}\tab patient ID number\cr
+#' \code{vas}\tab Neck pain as recorded by the patient on a VAS scale,  normalized to (0, 1)\cr
+#' \code{laser}\tab laser treatment received by  patient, either 1 (active) or 2 (placebo)\cr
+#' \code{time}\tab the measurement time, either 1 (initial assessment), 2 (after 7 weeks) or 3 (after 12 weeks). \cr
+#' }
+#'
+#' @docType data
+#' @keywords datasets
+#' @name neck_pain
+#' @usage data(neck_pain)
+#' @references Chow RT, Heller GZ, Barnsley L (2006). ``The effect of 300 mW, 830 nm laser on chronic 
+#' neck pain: a double-blind, randomized, placebo-controlled study.'' Pain, 124(1-2), 201-10. doi:16806710.
+#' @format A data frame with 264 rows and 4 variables
 NULL

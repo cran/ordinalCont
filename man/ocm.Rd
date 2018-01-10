@@ -53,6 +53,7 @@ an object of type \code{ocm} with the components listed below. Parameter estimat
 \item{edf}{estimated degrees of freedom}
 \item{df.residual}{the residual degrees of freedom}
 \item{nobs}{number of observations}
+\item{terms}{model terms}
 \item{call}{call to fit the model}
 \item{data}{data frame used}
 \item{weights}{case weights in fitting}

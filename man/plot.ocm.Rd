@@ -13,7 +13,8 @@
 \arguments{
 \item{x}{an object of class \code{ocm}}
 
-\item{plot.only}{either NULL, in which case all plots are displayed, or a value among "gfun", "quant_resid", "QQplot" or "smoother", in which case only the requested plot is displayed.}
+\item{plot.only}{either NULL, in which case all plots are displayed, or a value among "gfun", 
+"quant_resid", "QQplot" or "smoother", in which case only the requested plot is displayed.}
 
 \item{CIs}{method used for confidence bands for the g function. \code{"vcov"} = Wald [default]; \code{"no"} = no CIS;
 \code{"rnd.x.bootstrap"} = random-x bootstrap; \code{"fix.x.bootstrap"} = bootstrap with fixed-x 
@@ -29,7 +30,8 @@ resampling; \code{"param.bootstrap"} = parametric bootstrap}
 
 \item{CIcol}{color of the confidence interval bands. Defaults to ``lightblue''}
 
-\item{individual_plots}{logical. If TRUE, every figure is drawn in a new window. If FALSE (default), the first four figures are drawn in a 2-by-2 array.}
+\item{individual_plots}{logical. If TRUE, every figure is drawn in a new window. If FALSE (default), 
+the first four figures are drawn in a 2-by-2 array.}
 
 \item{...}{further arguments passed to or from other methods}
 }
@@ -39,7 +41,9 @@ the estimated density function of the continuous ordinal score for the null mode
 the histogram of the quantile residuals, the normal Q-Q plot and any smoother included in the model.
 }
 \details{
-The estimated g function, quantile residual histogram and normal Q-Q plot of an \code{ocm} object are plotted. If smothers are included in the formula, the user has the option to plot them in the same graph or separately.
+The estimated g function, quantile residual histogram and normal Q-Q plot of an \code{ocm} 
+object are plotted. If smothers are included in the formula, the user has the option to 
+plot them in the same graph or separately.
 If \code{CIs} is not \code{"no"}, 95\% confidence bands are also plotted.
 }
 \examples{

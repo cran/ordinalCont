@@ -2,17 +2,17 @@
 % Please edit documentation in R/ocm.methods.R
 \name{print.ocm}
 \alias{print.ocm}
-\title{Print continuous ordinal regression objects}
+\title{Print Continuous Ordinal Regression Objects}
 \usage{
 \method{print}{ocm}(x, ...)
 }
 \arguments{
-\item{x}{an object of class \code{ocm}, usually, a result of a call to \code{ocm}}
+\item{x}{an object of class \code{ocm}, usually, a result of a call to \code{ocm}.}
 
-\item{...}{further arguments passed to or from other methods}
+\item{...}{further arguments passed to or from other methods.}
 }
 \value{
-Prints an \code{ocm} object
+Prints an \code{ocm} object.
 }
 \description{
 \code{print.ocm} is the ordinalCont specific method for the generic function \code{print}, 

@@ -1,10 +1,10 @@
-#' Print continuous ordinal regression objects 
+#' @title Print Continuous Ordinal Regression Objects 
 #'
-#' \code{print.ocm} is the ordinalCont specific method for the generic function \code{print}, 
+#' @description \code{print.ocm} is the ordinalCont specific method for the generic function \code{print}, 
 #' which prints objects of class \code{ocm}.
-#' @param x an object of class \code{ocm}, usually, a result of a call to \code{ocm}
-#' @param ... further arguments passed to or from other methods
-#' @return Prints an \code{ocm} object
+#' @param x an object of class \code{ocm}, usually, a result of a call to \code{ocm}.
+#' @param ... further arguments passed to or from other methods.
+#' @return Prints an \code{ocm} object.
 #' @keywords likelihood, log-likelihood.
 #' @method print ocm
 #' @seealso \code{\link{ocm}}, \code{\link{summary.ocm}}
@@ -18,6 +18,109 @@ print.ocm <- function(x, ...)
   cat("\nCoefficients:\n")
   print(x$coefficients, ...)
 }
+
+#' @title Extract Model Coefficients
+#' 
+#' @description \code{coef.ocm} is the ordinalCont specific method for the generic function \code{coef}, 
+#' which extracts model coefficients from objects of class \code{ocm}.
+#' @param object an object of class \code{ocm}, usually, a result of a call to \code{ocm}.
+#' @param ... further arguments passed to or from other methods.
+#' @return A named numeric vector with the coefficients extracted from the model object.
+#' @method coef ocm
+#' @export
+#' @author Maurizio Manuguerra, Gillian Heller
+
+coef.ocm <- function(object, ...)
+{
+  object$coefficients
+}
+
+#' @title Model Terms
+#' 
+#' @description \code{terms.ocm} is the ordinalCont specific method for the generic function \code{terms}, 
+#' which extracts model terms from objects of class \code{ocm}.
+#' @param x an object of class \code{ocm}, usually, a result of a call to \code{ocm}.
+#' @param random.terms a logical indicating if random terms have to be included in the terms object. Defaults to TRUE.
+#' @param ... further arguments passed to or from other methods.
+#' @return An object of class c("terms", "formula") which contains the terms representation of a symbolic model.
+#' @method terms ocm
+#' @export
+#' @author Maurizio Manuguerra, Gillian Heller
+
+terms.ocm <- function(x, random.terms=TRUE, ...) 
+{
+  ocmTerms(x$formula, x$data, random.terms=random.terms)$terms
+}
+
+#' @title Model Frame
+#' 
+#' @description \code{model.frame.ocm} is the ordinalCont specific method for the generic function \code{model.frame}, 
+#' which return a \link{data.frame} with the variables needed to use \code{formula} and any ... arguments.
+#' @param formula a model formula 
+#' @param data a data.frame containing the variables in formula.
+#' @param random.terms a logical indicating if random terms have to be included in the terms object. Defaults to TRUE.
+#' @param ... a mix of further arguments to pass to the default method.
+#' @return A c("data.frame") with the variables needed to obtain \code{object}.
+#' @method model.frame ocm
+#' @export
+#' @author Maurizio Manuguerra, Gillian Heller
+
+model.frame.ocm <- function(formula, data, random.terms=TRUE, ...) 
+{
+  ocmTerms(formula, data, random.terms=random.terms, ...)$mf
+}
+
+#' @title Model Matrix
+#' 
+#' @description \code{model.matrix.ocm} is the ordinalCont specific method for the generic function \code{model.matrix}, 
+#' which extracts the model matrix from objects of class \code{ocm}.
+#' @param object an object of class \code{ocm}, usually, a result of a call to \code{ocm}.
+#' @param random.terms a logical indicating if random terms have to be included in the terms object. Defaults to TRUE.
+#' @param ... further arguments passed to or from other methods.
+#' @return A design (or model) matrix with the variables needed to obtain the object \code{x}, e.g., by expanding factors to a set of dummy variables and expanding interactions similarly.
+#' @method model.matrix ocm
+#' @export
+#' @author Maurizio Manuguerra, Gillian Heller
+
+model.matrix.ocm <- function(object, random.terms=TRUE, ...) 
+{
+  ocmTerms(object$formula, object$data, random.terms=random.terms, ...)$mm
+}
+
+
+#' @title Extract Model Coefficients
+#' 
+#' @description \code{nobs.ocm} is the ordinalCont specific method for the generic function \code{nobs}, 
+#' which returns number of observations from objects of class \code{ocm}.
+#' @param object an object of class \code{ocm}, usually, a result of a call to \code{ocm}.
+#' @param ... further arguments passed to or from other methods.
+#' @return The (numeric) number of observations in the model object.
+#' @method nobs ocm
+#' @export
+#' @author Maurizio Manuguerra, Gillian Heller
+
+nobs.ocm <- function(object, ...)
+{
+  object$nobs
+}
+
+
+#' @title Model Formulae
+#' 
+#' @description \code{formula.ocm} is the ordinalCont specific method for the generic function \code{formula}, 
+#' which extracts the model formula from objects of class \code{ocm}.
+#' @param x an object of class \code{ocm}, usually, a result of a call to \code{ocm}.
+#' @param ... further arguments passed to or from other methods.
+#' @return A symbolic model formula extracted from the model object.
+#' @method formula ocm
+#' @export
+#' @author Maurizio Manuguerra, Gillian Heller
+
+formula.ocm <- function(x, ...)
+{
+  x$formula
+}
+
 
 #' @title Summarizing Continuous Ordinal Fits
 #' @description Summary method for class \code{ocm}
@@ -150,9 +253,7 @@ print.summary.ocm <- function(x, full, ...)
 #' frame are used to compute the probability 
 #' densities of \code{v}, the continuous ordinal score. The estimated parameters 
 #' of the fitted model and \code{ndens}
-#' values of \code{v} are used to compute the probability densities on the latent scale. 
-#' These values are then transformed to scores on the continuous ordinal 
-#' scale using the estimated g function.
+#' values of \code{v} are used to compute the probability densities and their means. If a new data frame is used to make predictions, the individual (random) effects are set to zero, while they are maintained to the estimated values if \code{newdata} is NULL.
 #' @examples 
 #' \dontrun{
 #' fit.overall <- ocm(overall ~ cycleno + age + bsa + treatment, data=ANZ0001.sub, scale=c(0,100))
@@ -252,6 +353,7 @@ predict.ocm <- function(object, newdata=NULL, ndens=10, ...)
   return(pred)
 }
 
+
 #' @title Print the output of predict method
 #' @description Print method for class \code{predict.ocm}
 #' @param x an object of class \code{predict.ocm}
@@ -300,6 +402,31 @@ plot.predict.ocm <- function(x, records=NULL, ...)
   }
 }
 
+#' @title Extract Model Fitted Values
+#' 
+#' @description \code{fitted.ocm} is the ordinalCont specific method for the generic function \code{fitted}, 
+#' which computes model fitted from objects of class \code{ocm}. 
+#' @param object an object of class \code{ocm}, usually, a result of a call to \code{ocm}.
+#' @param ... further arguments passed to or from other methods.
+#' @details  An object of class \code{ocm} is used to compute the probability 
+#' densities of the continuous ordinal score. The fitted values are the means of such
+#' probability density functions. The output is scaled following the original scale of the scores.
+#' @return Fitted values computed from \code{object}.
+#' @method fitted ocm
+#' @export
+#' @author Maurizio Manuguerra, Gillian Heller
+
+fitted.ocm <- function(object, ...)
+{
+  fitted1=predict(object, ndens=100)$mean
+  # gfun_index = which(sapply(x$pars_obj, function(y)y$type)=="gfun")
+  # h <- lin_regressor(x$pars_obj)
+  # W  <- -as.numeric(h-gfun(x$pars_obj))
+  # fitted2=gfun_inv(W,x$pars_obj)
+  # return(list(fitted1, fitted2))
+  return(fitted1*diff(object$scale)+object$scale[1])
+}
+
 
 #' @title Plot method for Continuous Ordinal Fits
 #' 
@@ -307,7 +434,8 @@ plot.predict.ocm <- function(x, records=NULL, ...)
 #' the estimated density function of the continuous ordinal score for the null model (no covariates), 
 #' the histogram of the quantile residuals, the normal Q-Q plot and any smoother included in the model.
 #' @param x an object of class \code{ocm}
-#' @param plot.only either NULL, in which case all plots are displayed, or a value among "gfun", "quant_resid", "QQplot" or "smoother", in which case only the requested plot is displayed.
+#' @param plot.only either NULL, in which case all plots are displayed, or a value among "gfun", 
+#' "quant_resid", "QQplot" or "smoother", in which case only the requested plot is displayed.
 #' @param CIs method used for confidence bands for the g function. \code{"vcov"} = Wald [default]; \code{"no"} = no CIS;  
 #' \code{"rnd.x.bootstrap"} = random-x bootstrap; \code{"fix.x.bootstrap"} = bootstrap with fixed-x 
 #' resampling; \code{"param.bootstrap"} = parametric bootstrap 
@@ -316,9 +444,12 @@ plot.predict.ocm <- function(x, records=NULL, ...)
 #' @param main_density  title of the density function plot. Defauts to ``Density function when X=0''
 #' @param xlab  label of the x axis for the g function and the density plots. Defaults to ``Continuous ordinal scale [v]''
 #' @param CIcol  color of the confidence interval bands. Defaults to ``lightblue''
-#' @param individual_plots logical. If TRUE, every figure is drawn in a new window. If FALSE (default), the first four figures are drawn in a 2-by-2 array.
+#' @param individual_plots logical. If TRUE, every figure is drawn in a new window. If FALSE (default), 
+#' the first four figures are drawn in a 2-by-2 array.
 #' @param ... further arguments passed to or from other methods
-#' @details The estimated g function, quantile residual histogram and normal Q-Q plot of an \code{ocm} object are plotted. If smothers are included in the formula, the user has the option to plot them in the same graph or separately.
+#' @details The estimated g function, quantile residual histogram and normal Q-Q plot of an \code{ocm} 
+#' object are plotted. If smothers are included in the formula, the user has the option to 
+#' plot them in the same graph or separately.
 #' If \code{CIs} is not \code{"no"}, 95\% confidence bands are also plotted.
 #' @keywords plot
 #' @export
@@ -688,7 +819,7 @@ print.anova.ocm <- function(x, digits=max(getOption("digits") - 2, 3),
 #' }
 
 logLik.ocm <- function(object, ...){
-  structure(object$logLik, df = object$edf, nobs=object$nobs, class = "logLik.ocm")
+  structure(object$logLik, df = object$edf, nobs=object$nobs, class = "logLik")
 }
 
 #' @title Extract AIC from a fitted Continuous Ordinal Model
@@ -723,6 +854,27 @@ extractAIC.ocm <- function(fit, scale = 0, k = 2, ...) {
   c(edf, -2*fit$logLik + k * edf)
 }
 
+#' @title Extract the deviance from a fitted Continuous Ordinal Model
+#' @description Extracts the absolute conditional deviance for a fitted \code{ocm} object
+#' @param object \code{ocm} object
+#' @param ... further arguments to be passed to methods
+#' @details The deviance is computed as:
+#' \deqn{-2\ell}
+#' where \eqn{\ell} is the conditional penalized log-likelihood.
+#' @seealso \code{\link{ocm}}
+#' @return The value of the deviance extracted from \code{object}.
+#' @export
+#' @author Maurizio Manuguerra, Gillian Heller
+#' @method deviance ocm
+#' @examples
+#' \dontrun{
+#' fit.overall  <- ocm(overall  ~ cycleno + age + bsa + treatment, data=ANZ0001.sub, scale=c(0,100))
+#' deviance(fit.overall)
+#' }
+
+deviance.ocm <- function(object, ...) {
+  -2*object$logLik[1]
+}
 
 #' @title Variance-Covariance Matrix for a Fitted Model Object
 #' @description Calculates variance-covariance matrix for a fitted \code{ocm} object

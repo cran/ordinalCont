@@ -41,6 +41,7 @@
 #' \item{edf}{estimated degrees of freedom}
 #' \item{df.residual}{the residual degrees of freedom}
 #' \item{nobs}{number of observations}
+#' \item{terms}{model terms}
 #' \item{call}{call to fit the model}
 #' \item{data}{data frame used}
 #' \item{weights}{case weights in fitting}
@@ -96,6 +97,9 @@ ocm <- function(formula, data=NULL, scale=c(0,1), weights, link = c("logit"), ni
   weights <- weights[sorting_ind]
   ### Create ocmPARS object
   pars_obj=ocmPars(formula, data, v, n.int.knots, order)
+  ### Terms
+  terms_mf_mm=ocmTerms(formula, data)
+  ###
   pen_index = which(sapply(pars_obj, function(x)x$use_lambda))
   n_lambda = length(pen_index)
   if (any(!is.na(lambdas))){
@@ -151,8 +155,11 @@ ocm <- function(formula, data=NULL, scale=c(0,1), weights, link = c("logit"), ni
   est$edf <- regression_edf
   est$df.residual <- sum(weights)-regression_edf
   est$nobs <- sum(weights)
+  est$terms <- terms_mf_mm$terms
   est$call <- match.call()
   est$data <- data
+  est$model.frame <- terms_mf_mm$mf
+  est$model.matrix <- terms_mf_mm$mm
   est$weights <- weights
   est$sorting <- sorting_ind
   est$link <- link
@@ -336,7 +343,6 @@ density0 <- function(pars_obj){
       h <- h
     }
   }
-  print(h)
   h <- rep(h, length(g))
   return(dg*exp(g+h)/(1+exp(g+h))^2)
 }

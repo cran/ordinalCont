@@ -12,11 +12,17 @@ data(ANZ0001)
 The complete ANZ0001 trial data set
 }
 \details{
-The ANZ0001 trial, conducted by the ANZ Breast Cancer Trials Group, is an unblinded, multi-centre, randomized trial with three chemotherapy treatment arms, concluded in 2005 (Stockler et al 2007). 
-Health-related quality of life measures (Overall quality of life, Physical Well-Being, Mood, Pain, Nausea and Vomiting, Appetite) are assessed at each chemotherapy treatment cycle, from randomization until disease progression, when treatment is interrupted. 
-The treatments Intermittent Capecitabine (IC) and Continuous Capecitabine (CC) are compared with the standard combination treatment CMF, each with its own protocol. 
-There is no maximum duration of treatment, but it is interrupted on disease progression, or when patient intolerance or unacceptable toxicity are recorded.
-The data set is extracted from the ANZ0001 trial and contains information from 292 patients with complete quality of life measurements.
+The ANZ0001 trial, conducted by the ANZ Breast Cancer Trials Group, is an unblinded, multi-centre, 
+randomized trial with three chemotherapy treatment arms, concluded in 2005 (Stockler et al 2007). 
+Health-related quality of life measures (Overall quality of life, Physical Well-Being, Mood, Pain, Nausea and 
+Vomiting, Appetite) are assessed at each chemotherapy treatment cycle, from randomization until 
+disease progression, when treatment is interrupted. 
+The treatments Intermittent Capecitabine (IC) and Continuous Capecitabine (CC) are compared with the 
+standard combination treatment CMF, each with its own protocol. 
+There is no maximum duration of treatment, but it is interrupted on disease progression, or when patient 
+intolerance or unacceptable toxicity are recorded.
+The data set is extracted from the ANZ0001 trial and contains information from 292 patients with complete 
+quality of life measurements.
 
 The variables are as follows:
 
@@ -35,6 +41,9 @@ The variables are as follows:
 }
 }
 \references{
-Stockler, M., T. Sourjina, P. Grimison, V. Gebski, M. Byrne, V. Harvey, P. Francis et al. ``A randomized trial of capecitabine (C) given intermittently (IC) rather than continuously (CC) compared to classical CMF as first-line chemotherapy for advanced breast cancer (ABC).'' In \emph{ASCO Annual Meeting Proceedings}, vol. 25, no. 18_suppl, p. 1031. 2007.
+Stockler, M., T. Sourjina, P. Grimison, V. Gebski, M. Byrne, V. Harvey, P. Francis et al. 
+``A randomized trial of capecitabine (C) given intermittently (IC) rather than continuously (CC) compared 
+to classical CMF as first-line chemotherapy for advanced breast cancer (ABC).'' In \emph{ASCO Annual Meeting 
+Proceedings}, vol. 25, no. 18_suppl, p. 1031. 2007.
 }
 \keyword{datasets}

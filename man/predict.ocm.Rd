@@ -40,9 +40,7 @@ An object of class \code{ocm} and optionally a new data
 frame are used to compute the probability 
 densities of \code{v}, the continuous ordinal score. The estimated parameters 
 of the fitted model and \code{ndens}
-values of \code{v} are used to compute the probability densities on the latent scale. 
-These values are then transformed to scores on the continuous ordinal 
-scale using the estimated g function.
+values of \code{v} are used to compute the probability densities and their means. If a new data frame is used to make predictions, the individual (random) effects are set to zero, while they are maintained to the estimated values if \code{newdata} is NULL.
 }
 \examples{
 \dontrun{
