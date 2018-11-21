@@ -141,15 +141,20 @@ summary.ocm <- function(object, full=F, ...)
   pars_obj <- object[[2]]
   inds <- ind_pars_obj(pars_obj)
   ###
+  N.fix <- sapply(inds$fix.eff, function(i)pars_obj[[i]]$len)
+  fix_effs <- (N.fix>1) #there is always an intercept, and all fixed terms are in 1 element of pars_obj
   H0fix   <- rep(0,pars_obj[[inds$fix.eff]]$len)
+  #
   H0gfun  <- rep(0,pars_obj[[inds$gfun]]$len)
+  #
   N.rnd <- sapply(inds$rnd.eff, function(i)pars_obj[[i]]$len)
   rnd_effs <- (length(N.rnd)>0)
   H0rnd   <- rep(0,ifelse(rnd_effs,sum(N.rnd),0))
+  #
   N.smooth <- sapply(inds$smoother, function(i)pars_obj[[i]]$len)
   smoother <- (length(N.smooth)>0)
   H0smooth   <- rep(0,ifelse(smoother,sum(N.smooth),0))
-  
+  ##
   H0 <- c(H0fix,H0gfun,H0rnd, H0smooth)
   se <- sqrt(diag(object$vcov))
   tval <- (coef(object)[1:length(se)]-H0) / se
@@ -163,9 +168,11 @@ summary.ocm <- function(object, full=F, ...)
               coefficients=TAB,
               len_beta=pars_obj[[inds$fix.eff]]$len,
               len_gfun=pars_obj[[inds$gfun]]$len,
-              gfun_pars = pars_obj[[inds$gfun]]$pars)
+              gfun_pars = pars_obj[[inds$gfun]]$pars,
+              fix_effs = fix_effs,
+              rnd_effs = rnd_effs,
+              smoother = smoother)
   ##RND
-  rnd_effs = (length(N.rnd)>0)
   if (rnd_effs){
     TABrnd <- data.frame(Name = sapply(inds$rnd.eff, function(i)pars_obj[[i]]$group.names),
                          Variance = sapply(inds$rnd.eff, function(i)round(1/(2*pars_obj[[i]]$lambda),3)),
@@ -173,9 +180,7 @@ summary.ocm <- function(object, full=F, ...)
     TABrnd$Name <- as.character(TABrnd$Name)
     res$coefficients_rnd=TABrnd
   }
-  res$rnd_effs = rnd_effs
-  #   ##Smoother
-  smoother = (length(N.smooth)>0)
+  ##Smoother
   if (smoother){
     TABsmoother <- data.frame(Name = sapply(inds$smoother, function(i)pars_obj[[i]]$group.names),
                               Variance = sapply(inds$smoother, function(i)round(1/(2*pars_obj[[i]]$lambda),3)),
@@ -183,7 +188,6 @@ summary.ocm <- function(object, full=F, ...)
     TABsmoother$Name <- as.character(TABsmoother$Name)
     res$coefficients_smoother=TABsmoother
   }
-  res$smoother = smoother
   ###
   class(res) <- "summary.ocm"
   print(res, full, ...)
@@ -208,20 +212,19 @@ print.summary.ocm <- function(x, full, ...)
     print(x$coefficients_smoother, row.names=F)
     cat("\n")
   }
-  
-  cat("Coefficients:\n")
-  if (full){
-    printCoefmat(x$coefficients, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, ...)
-    #cat("\n")
-    #cat("g function:\n")
-    #printCoefmat(x$coefficients[(x$len_beta+1):(x$len_beta+x$len_gfun),], P.values = TRUE, has.Pvalue = TRUE, ...)
-  } else {
-    printCoefmat(x$coefficients[1:x$len_beta,,drop=F], P.values = TRUE, has.Pvalue = TRUE, signif.legend = TRUE, ...)
+  if (x$fix_effs){
+    cat("Coefficients:\n")
+    if (full){
+      printCoefmat(x$coefficients[2:x$len_beta,,drop=F], P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, ...)
+      #cat("\n")
+      #cat("g function:\n")
+      #printCoefmat(x$coefficients[(x$len_beta+1):(x$len_beta+x$len_gfun),], P.values = TRUE, has.Pvalue = TRUE, ...)
+    } else {
+      printCoefmat(x$coefficients[2:x$len_beta,,drop=F], P.values = TRUE, has.Pvalue = TRUE, signif.legend = TRUE, ...)
+    }
   }
   invisible()
 }
-
-
 
 
 #' @title Predict method for Continuous Ordinal Fits
@@ -232,175 +235,84 @@ print.summary.ocm <- function(x, full, ...)
 #' which to predict. 
 #' Note that all predictor variables should be present, having the same names as the variables 
 #' used to fit the model. If \code{NULL}, predictions are computed for the original dataset.
-#' @param ndens the number of evenly spaced values of \code{v} over which the probability density is evaluated (default: 10)
+#' @param type type of prediction. One of "response" (default), "density", "CDF", "quantile", "regressor", "exp_regressor", "hazard", "cum_hazard" or "survival"
+#' @param prob probabilities used to evaluate the quantile function (if \code{type="quantile"})
+#' @param K number of evenly spaced values of \code{v} over which the probability density is evaluated (if \code{type="density"} or \code{type="CDF"}) or number of probabilities at which the quantile function is evaluated (if \code{type="quantile"}). The default is 50.
 #' @param ... further arguments passed to or from other methods
 #' @keywords predict
 #' @method predict ocm
 #' @author Maurizio Manuguerra, Gillian Heller
-#' @return  A list containing the following components: 
-#' \item{mean}{a vector of length equal to the number of observations.
-#' Each element is the mean of \code{v}, 
-#' the  continuous ordinal random variable, conditional on the covariates in the model.}
-#' \item{density}{a matrix with number of rows equal to the number of observations. Each row 
-#' contains the values of the log density function of \code{v} conditional on the covariates in the 
-#' model. 
-#' The density function is calculated over \code{ndens} equally-spaced values of v in (0,1).}
-#' \item{x}{a vector with the \code{ndens} equally-spaced values of \code{v} in (0,1) used to compute the 
-#' density of v}
-#' \item{formula}{the formula used to fit the model}
-#' \item{newdata}{a new data frame used to make predictions. It takes value NULL if no new data frame has been used.}
+#' @return  A vector of predictions, according to the \code{type}. 
 #' @details An object of class \code{ocm} and optionally a new data 
-#' frame are used to compute the probability 
-#' densities of \code{v}, the continuous ordinal score. The estimated parameters 
-#' of the fitted model and \code{ndens}
-#' values of \code{v} are used to compute the probability densities and their means. If a new data frame is used to make predictions, the individual (random) effects are set to zero, while they are maintained to the estimated values if \code{newdata} is NULL.
+#' frame are used to compute the predictions. The estimated parameters 
+#' of the fitted model and \code{K}
+#' values of \code{v} are used to compute the conditional probability density and the conditional cumulative distribution. If a new data frame is used to make predictions, the individual (random) effects are set to zero, while they are maintained to the estimated values if \code{newdata} is NULL.
 #' @examples 
 #' \dontrun{
 #' fit.overall <- ocm(overall ~ cycleno + age + bsa + treatment, data=ANZ0001.sub, scale=c(0,100))
 #' pred <- predict(fit.overall)
-#' plot(pred)
 #' }
-#' @seealso \code{\link{ocm}}, \code{\link{plot.predict.ocm}}
+#' @seealso \code{\link{ocm}}
 #' @export
 
 
-predict.ocm <- function(object, newdata=NULL, ndens=10, ...)
+predict.ocm <- function(object, newdata=NULL, type= c("response", "density", "CDF", "quantile", "regressor", "exp_regressor", "hazard", "cum_hazard", "survival"), prob = 1:(K - 1) / K, K = 50, ...)
 {
-  v <- seq(range(object$v)[1], range(object$v)[2], length.out = ndens)
-  pars_obj_fit <- object[[2]]
-  inds <- ind_pars_obj(pars_obj_fit)
-  formula <- object$formula
-  fit_types <- sapply(pars_obj_fit, function(obj)obj$type)
-  if(is.null(newdata)) {
-    newdata <- object$data
-    newweights <- object$weights
+  type <- match.arg(type)
+  if (is.null(newdata)){
+    pars_obj <- object$pars_obj
+    data <- object$data
   } else {
-    newweights <- rep(1, nrow(newdata))
-    formula = remove.rnd.eff(formula)
-    inds_rnd.eff <- which(fit_types=="rnd.eff")
-    pars_obj_fit <- pars_obj_fit[-inds_rnd.eff]
-    fit_types <- sapply(pars_obj_fit, function(obj)obj$type)
-    inds <- ind_pars_obj(pars_obj_fit)
+    ## Join with newdata
+    data <- object$data
+    internames <- intersect(names(data), names(newdata))
+    data[internames] <- newdata[internames]
+    pars_obj <- ocmPars_update(object, data)
   }
-  #prepare nrow(newdata) datasets, each with a row of newdata repeated ndens times
-  #modes <- NULL
-  means <- NULL
-  my.means <- NULL
-  densities <- NULL
-  for (subject in 1:nrow(newdata)){
-    d.matrix = newdata[rep(subject,ndens),]
-    wts = rep(newweights[subject],ndens)
-    len=sapply(pars_obj_fit,function(x)x$len)
-    order=sapply(pars_obj_fit,function(x)x$order)
-    n.int.knots=(len-order+1)[inds$gfun]
-    pars_obj=ocmPars(formula, d.matrix, v, n.int.knots=n.int.knots)
-    new_types <- sapply(pars_obj, function(obj)obj$type)
-    if (!all(new_types == fit_types)) stop("New data are not compatible with those used in fit.")
-    #fix terms
-    pars_obj[[inds$fix.eff]]$pars = pars_obj_fit[[inds$fix.eff]]$pars
-    #g fun
-    pars_obj[[inds$gfun]]$pars = pars_obj_fit[[inds$gfun]]$pars
-    pars_obj[[inds$gfun]]$lambda = pars_obj_fit[[inds$gfun]]$lambda
-    bases  <- basis2_mpl(v,knots=pars_obj_fit[[inds$gfun]]$knots,order=pars_obj_fit[[inds$gfun]]$order,which=c(1,2,3), splines="isplines")
-    mat=bases$Psi
-    mat1=bases$psi
-    mat2=bases$psi2
-    vars=apply(mat,2,var)
-    idrop=which.min(vars)
-    mat=mat[,-idrop]
-    mat1=mat1[,-idrop]
-    mat2=mat2[,-idrop]
-    R <- formR2(v, mat2)
-    pars_obj[[inds$gfun]]$mat = mat
-    pars_obj[[inds$gfun]]$mat1 = mat1
-    pars_obj[[inds$gfun]]$R = R
-    pars_obj[[inds$gfun]]$len = nrow(R)
-    #rnd terms
-    if (length(inds$rnd.eff)>0){
-      for (ii in inds$rnd.eff){
-        pars_obj[[ii]]$pars = pars_obj_fit[[ii]]$pars
-        pars_obj[[ii]]$lambda = pars_obj_fit[[ii]]$lambda
-      }
-    }
-    #smooth terms
-    if (length(inds$smoother)>0){
-      for (ii in inds$smoother){
-        pars_obj[[ii]] <- pars_obj_fit[[ii]]
-        pars_obj[[ii]]$mat <- matrix(rep(pars_obj[[ii]]$mat[subject,], ndens),nrow=ndens, byrow=T)
-        pars_obj[[ii]]$mat1 <- matrix(rep(pars_obj[[ii]]$mat1[subject,], ndens),nrow=ndens, byrow=T)
-        
-        # pars_obj[[ii]]$pars = pars_obj_fit[[ii]]$pars
-        # pars_obj[[ii]]$lambda = pars_obj_fit[[ii]]$lambda
-        # bases  <- basis2_mpl(pars_obj[[ii]]$v,knots=pars_obj_fit[[ii]]$knots,order=pars_obj_fit[[ii]]$order,which=c(1,2,3), splines="bsplines")
-        # mat=bases$Psi
-        # mat1=bases$psi
-        # mat2=bases$psi2
-        # R <- formR2(pars_obj[[ii]]$v, mat2)
-        # pars_obj[[ii]]$mat = mat
-        # pars_obj[[ii]]$mat1 = mat1
-        # pars_obj[[ii]]$R = R
-        # pars_obj[[ii]]$len = nrow(R)
-      }
-    }
-    pars_obj <- compute_Rstar(pars_obj)
-    idensity <- exp(wts * llik(pars_obj)) #density
-    #idensity <- exp(pllik(pars_obj,wts=object$weights)) #penalized density
-    densities <- rbind(densities, t(idensity))
-    means <- c(means, sum(v*idensity)/length(v))
-    pred <- list(mean = means, density = densities, x = v, formula = formula, newdata = newdata)
+  ##
+  link=object$link
+  if (link == "logit" | link=="probit" | link=="cloglog" | link=="loglog" | link=="cauchit"){
+    deriv_funs <- deriv_link(link=link)
+  } else {
+    stop("link function not implemented.")
   }
-  class(pred) <- "predict.ocm"
-  return(pred)
+  curval <- current.values(pars_obj, deriv_funs)
+  ##
+  if (type=="response"){
+    h <- curval$h
+    hstar <- h - gfun(pars_obj, intercept=TRUE)
+    out <- gfun_inv(-hstar, pars_obj) 
+  } else if (type=="density"){
+    out <- exp(llik_gen(pars_obj, curval))
+  } else if (type=="CDF"){
+    out <- curval$dF$`0`
+  } else if (type=="quantile"){
+    hstar <- curval$h - gfun(pars_obj, intercept=TRUE) #array length n
+    inv.prob <- inv_link(link)
+    out <- sapply(hstar, function(x) gfun_inv(inv.prob(prob)-x, pars_obj))
+    dimnames(out) = list(prob=prob, NULL)
+  } else if (type=="regressor"){
+    out = curval$h
+  } else if (type=="exp_regressor"){
+    out = exp(curval$h)
+  } else if (type=="hazard"){
+    # h <- curval$h
+    # out = curval$dFs$`1`*dg(pars_obj)/(1 - exp(h)/(1+exp(h)))
+    out <- exp(llik_gen(pars_obj, curval)) / (1 - curval$dF$`0`)
+  } else if (type=="cum_hazard"){
+    # h <- lin_regressor(pars_obj);
+    # out = -log(1 - exp(h)/(1+exp(h)))
+    out <- -log(1 - curval$dF$`0`)
+  } else if (type=="survival"){
+    out = 1 - curval$dF$`0`
+  } else {
+    stop("Prediction type not supported.")
+  }
+  return(out)
 }
 
 
-#' @title Print the output of predict method
-#' @description Print method for class \code{predict.ocm}
-#' @param x an object of class \code{predict.ocm}
-#' @param ... further arguments passed to or from other methods
-#' @keywords predict
-#' @details The table of predictions from \code{predict.ocm} is printed.
-#' @seealso \code{\link{predict.ocm}}, \code{\link{ocm}}
-#' @author Maurizio Manuguerra, Gillian Heller
-#' @export
 
-print.predict.ocm <- function(x, ...)
-{
-  cat("\nThe data set used by the predict method contains",length(x$mean),"records.\n")
-  cat("Call:\n")
-  print(update(x$formula, .~.+1))
-  cat("\nSummary of means:\n")
-  print(summary(x$mean), ...)
-  invisible()
-}
-
-#' @title Plot  probability densities  from  output of  predict method
-#' @description Plot method for class \code{predict.ocm}
-#' @param x An object of class \code{predict.ocm}
-#' @param records An integer or a vector of integers. The number of the record/s 
-#' in the data set for which the density has to be plotted. If not specified, the 
-#' function will  plot all records.
-#' @param ... further arguments passed to or from other methods
-#' @details The probability densities from \code{predict.ocm}  are plotted.
-#' @seealso \code{\link{predict.ocm}}, \code{\link{ocm}}
-#' @keywords predict, plot
-#' @export
-#' @author Maurizio Manuguerra, Gillian Heller
-
-plot.predict.ocm <- function(x, records=NULL, ...)
-{
-  if (is.null(records)) records=1:nrow(x$density)
-  cat("Call:\n")
-  print(x$formula)
-  cat("The data set used by the predict method contains ",nrow(x$density)," records.\n")
-  for (i in records){
-    input <- readline(paste("Press 'enter' to plot the probability density of record ",i,", 'q' to quit: ",sep=''))
-    if (input == "q") break()
-    plot(x$x, exp(x$density[i,]), ylab="Probability Density", main=paste("Record", i), 
-         xlab=paste("mean =", round(x$mean[i],3)), t='l')
-    lines(rep(x$mean[i],2), c(0, max(exp(x$density[i,]))), lty=21)
-  }
-}
 
 #' @title Extract Model Fitted Values
 #' 
@@ -418,7 +330,7 @@ plot.predict.ocm <- function(x, records=NULL, ...)
 
 fitted.ocm <- function(object, ...)
 {
-  fitted1=predict(object, ndens=100)$mean
+  fitted1=predict(object, type="response", k=100)
   # gfun_index = which(sapply(x$pars_obj, function(y)y$type)=="gfun")
   # h <- lin_regressor(x$pars_obj)
   # W  <- -as.numeric(h-gfun(x$pars_obj))
@@ -498,8 +410,8 @@ plot.ocm <- function(x, plot.only=NULL, CIs = c('vcov','no', 'rnd.x.bootstrap','
     vg=pars_obj[[inds$gfun]]$pars
     sevg <- solve(t(vg)%*%solve(vcov_g)%*%vg) ^ .5
     sevg <- rep(sevg, length(pars_obj[[inds$gfun]]$pars))
-    pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars <- pars_obj[[inds$gfun]]$pars - 1.96*sevg; ci_low = intercept + as.numeric(gfun(pars_obj_tmp))
-    pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars <- pars_obj[[inds$gfun]]$pars + 1.96*sevg; ci_high = intercept +  as.numeric(gfun(pars_obj_tmp))
+    pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars <- pars_obj[[inds$gfun]]$pars - 1.96*sevg; ci_low = as.numeric(gfun(pars_obj_tmp))
+    pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars <- pars_obj[[inds$gfun]]$pars + 1.96*sevg; ci_high = as.numeric(gfun(pars_obj_tmp))
     
     # #Warning: estimated parameter for the i-spline are not mvnormal, as they need to be positive (truncated mvnormal)
     mat=pars_obj_tmp[[inds$gfun]]$mat
@@ -511,9 +423,9 @@ plot.ocm <- function(x, plot.only=NULL, CIs = c('vcov','no', 'rnd.x.bootstrap','
     # #rparams[rparams<0] <- 0
     # all_gfuns <- NULL
     # for (i in 1:R)  {pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars=rparams[i,]; all_gfuns <- rbind(all_gfuns, as.numeric(gfun(pars_obj_tmp)))}
-    # ci_low  <- intercept + apply(all_gfuns, 2, function(x )quantile(x, 0.025))
-    # ci_median <- intercept + apply(all_gfuns, 2, function(x)quantile(x, 0.5))
-    # ci_high <- intercept + apply(all_gfuns, 2, function(x)quantile(x, 0.975)) 
+    # ci_low  <- apply(all_gfuns, 2, function(x )quantile(x, 0.025))
+    # ci_median <- apply(all_gfuns, 2, function(x)quantile(x, 0.5))
+    # ci_high <- apply(all_gfuns, 2, function(x)quantile(x, 0.975)) 
     ylim <- c(min(ci_low), max(ci_high))
   } else if (CIs=='rnd.x.bootstrap' | CIs=='fix.x.bootstrap'| CIs=='param.bootstrap'){
     input='?'
@@ -544,7 +456,7 @@ plot.ocm <- function(x, plot.only=NULL, CIs = c('vcov','no', 'rnd.x.bootstrap','
     }
     lines(c(.5,.5), ylim, col='grey')
     lines(xlim, c(0, 0), col='grey')
-    lines(v,gfun0,lty=21)
+    lines(v,gfun0,lty=21, ...)
     legend('topleft', c("g function","Std logit"), lty=c(19,21))
   }
   if (individual_plots)readline("Press any key to continue.\n")
@@ -597,7 +509,7 @@ plot.ocm <- function(x, plot.only=NULL, CIs = c('vcov','no', 'rnd.x.bootstrap','
     }
     num.plots=sum(which.plot)
     if (num.plots==1){
-      par(mfrow=c(1,1))
+      par(mfrow=c(1,1)) #comment for JSS plots
     } else if (num.plots==2){
       par(mfrow=c(1,2))
     } else if (num.plots==3){
@@ -655,15 +567,16 @@ plot.ocm <- function(x, plot.only=NULL, CIs = c('vcov','no', 'rnd.x.bootstrap','
           } else {
             main=""
           }
+          ylim[2] = ylim[2] + 0.2*diff(range(ylim))
           plot(vv[[i]],sfun[[i]], main=main, t='l', xlab="v", ylab="s(v)", xlim=xlim, ylim=ylim, ...)
         } else {
-          lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1]))
+          lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1]), ...)
         }
         #CI
         if (CIs!='no'){
           xcol <- col2rgb(CIcol)/255
           polygon(c(vv[[i]], rev(vv[[i]])),c(ci_low[[i]],rev(ci_high[[i]])), col = rgb(xcol[1],xcol[2],xcol[3],alpha=0.5))
-          lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1])) #to superimpose gfun estimate on shaded area
+          lines(vv[[i]],sfun[[i]], lty=(19+i-ii[1]), ...) #to superimpose gfun estimate on shaded area
         }
         #legend
         #if (i==tail(ii,1)) legend('topleft', unlist(grpnames[ii]), lty=(18+(1:length(ii))))
@@ -672,7 +585,7 @@ plot.ocm <- function(x, plot.only=NULL, CIs = c('vcov','no', 'rnd.x.bootstrap','
     }
     if (!individual_plots) par(mfrow=c(1,1))
   }
-  par(mfrow=c(1,1))
+  par(mfrow=c(1,1)) #comment for JSS plots
 }
 
 #' @title Anova method for Continuous Ordinal Fits 
@@ -896,6 +809,61 @@ deviance.ocm <- function(object, ...) {
 vcov.ocm <- function(object, ...) {
   object$vcov
 }
+
+
+#' @title Estimated g function for a Fitted Model Object
+#' @description Calculates the estimated g function for a fitted \code{ocm} object
+#' @param object an \code{ocm} object
+#' @param ... further arguments to be passed to methods
+#' @method get_gfun ocm
+#' @return a dataframe containing four columns: the values of the score v, the estimated g function and the 95\%CIs
+#' @seealso \code{\link{ocm}}
+#' @author Maurizio Manuguerra, Gillian Heller
+#' @examples
+#' \dontrun{
+#' fit.overall  <- ocm(overall  ~ cycleno + age + bsa + treatment, data=ANZ0001.sub, scale=c(0,100))
+#' get_gfun(fit.overall)
+#' }
+#' @rdname get_gfun
+#' @export 
+get_gfun <- function(object, ...){
+  UseMethod("get_gfun", object)
+}
+
+#' @return \code{NULL}
+#'
+#' @rdname get_gfun
+#' @method get_gfun ocm
+#' @export get_gfun.ocm
+get_gfun.ocm <- function(object, ...){
+  pars_obj <- object$pars_obj
+  inds <- ind_pars_obj(pars_obj)
+  rubric <- make_rubric(pars_obj)
+  g_inds <- rubric[inds$gfun,1]:rubric[inds$gfun,2]
+  intercept = coef(object)[1]
+  gfun <- with(pars_obj[[inds$gfun]], mat %*% pars)+intercept
+  ##
+  xlim <- c(0,1)
+  ylim <- c(min(gfun), max(gfun))
+  vcov_g <- object$vcov[g_inds,g_inds]
+  vg=pars_obj[[inds$gfun]]$pars
+  sevg <- solve(t(vg)%*%solve(vcov_g)%*%vg) ^ .5
+  sevg <- rep(sevg, length(pars_obj[[inds$gfun]]$pars))
+  pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars <- pars_obj[[inds$gfun]]$pars - 1.96*sevg; ci_low = as.numeric(gfun(pars_obj_tmp))
+  pars_obj_tmp = pars_obj; pars_obj_tmp[[inds$gfun]]$pars <- pars_obj[[inds$gfun]]$pars + 1.96*sevg; ci_high = as.numeric(gfun(pars_obj_tmp))
+  
+  mat=pars_obj_tmp[[inds$gfun]]$mat
+  se_g <- diag(mat %*% tcrossprod(vcov_g,mat)) ^ .5
+  ci_low  = (intercept + as.numeric(mat %*% vg) - 1.96*se_g)
+  ci_high = (intercept + as.numeric(mat %*% vg) + 1.96*se_g)
+
+  data.frame(v=pars_obj[[inds$gfun]]$v, gfun=gfun, ci_low=ci_low, ci_high=ci_high)
+}
+
+
+
+
+
 
 
 

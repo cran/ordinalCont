@@ -4,9 +4,9 @@
 \alias{ocm}
 \title{Ordinal regression for continuous scales}
 \usage{
-ocm(formula, data = NULL, scale = c(0, 1), weights, link = c("logit"),
-  niters = c(500, 500), conv_crit = 0.01, n.int.knots = NULL, order = 4,
-  lambdas = NA)
+ocm(formula, data = NULL, scale = NULL, weights, link = c("logit",
+  "probit", "cloglog", "loglog", "cauchit"), niters = c(500, 500),
+  conv_crit = 0.01, n.int.knots = NULL, order = 4, lambdas = NA)
 }
 \arguments{
 \item{formula}{a formula expression as for regression models, of the form 
@@ -17,13 +17,13 @@ ignored.}
 \item{data}{an optional data frame in which to interpret the variables occurring in the 
 formulas}
 
-\item{scale}{a vector of length 2 with the boundaries of the ordinal scale used. Default is \code{c(0,1)}.}
+\item{scale}{a vector of length 2 with the boundaries of the ordinal scale used. If not specified, the range of the data is used, and a warning is displayed.}
 
 \item{weights}{optional case weights in fitting. Defaults to 1.}
 
 \item{link}{link function, i.e. the type of location-scale distribution assumed for 
-the latent distribution. The default ``logit'' link gives the proportional odds model 
-and is the only link function currently supported.}
+the latent distribution. The default ``logit'' link gives the proportional odds model.
+Other options are "logit", "probit", "cloglog", "loglog", "cauchit".}
 
 \item{niters}{a vector of length 2 with the maximimum number of external and internal 
 iterations used in the fitting algorithm. The internal algorithm estimates the parameters 
@@ -55,14 +55,14 @@ an object of type \code{ocm} with the components listed below. Parameter estimat
 \item{nobs}{number of observations}
 \item{terms}{model terms}
 \item{call}{call to fit the model}
-\item{data}{data frame used}
+\item{data}{the data frame as in input, ordered by the outcome values}
+\item{model.frame}{the model.frame used in the fit}
+\item{model.matrix}{the model.matrix used in the fit}
 \item{weights}{case weights in fitting}
 \item{sorting}{the ordinal score v sorting vector}
 \item{link}{link function used}
 \item{formula}{formula used}
 \item{scale}{the boundaries of the ordinal scale used}
- @references Manuguerra M, Heller GZ (2010). Ordinal Regression Models for Continuous 
- Scales, \emph{The International Journal of Biostatistics}: 6(1), Article 14.
 }
 \description{
 Continuous ordinal regression with logit link using I-splines to model the g function.
@@ -85,6 +85,13 @@ fit.overall.smooth  <- ocm(overall  ~ age + treatment : s(cycleno), data=ANZ0001
 summary(fit.overall.smooth)
 plot(fit.overall.smooth)
 }
+}
+\references{
+Manuguerra M, Heller GZ (2010). Ordinal Regression Models for Continuous 
+ Scales, \emph{The International Journal of Biostatistics}: 6(1), Article 14.
+
+Manuguerra M, Heller GZ, Ma J (2017). Semi-parametric Ordinal Regression Models for Continuous 
+ Scales, \emph{Proceedings of the 32nd International Workshop on Statistical Modelling}. July 3-7, 2017, Groningen, Netherlands.
 }
 \author{
 Maurizio Manuguerra, Gillian Heller

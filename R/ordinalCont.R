@@ -19,6 +19,8 @@
 #' (This implies a proportional odds model.)  The likelihood is 
 #' maximized using the \code{MI} algorithm (Ma, 2010). Fixed- and mixed-effects models are implemented 
 #' in the function \code{\link{ocm}}. 
+#' @references Manuguerra M, Heller GZ, Ma J (2017). Semi-parametric Ordinal Regression Models for Continuous 
+#'  Scales, \emph{Proceedings of the 32nd International Workshop on Statistical Modelling}. July 3-7, 2017, Groningen, Netherlands.
 #' @references   Manuguerra M, Heller GZ (2010). Ordinal Regression Models for Continuous 
 #'  Scales, \emph{The International Journal of Biostatistics}: 6(1), Article 14.
 #' @references Heller, GZ, Manuguerra M, Chow R (2016). How to analyze the Visual Analogue Scale: 

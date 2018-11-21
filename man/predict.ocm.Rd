@@ -4,7 +4,9 @@
 \alias{predict.ocm}
 \title{Predict method for Continuous Ordinal Fits}
 \usage{
-\method{predict}{ocm}(object, newdata = NULL, ndens = 10, ...)
+\method{predict}{ocm}(object, newdata = NULL, type = c("response",
+  "density", "CDF", "quantile", "regressor", "exp_regressor", "hazard",
+  "cum_hazard", "survival"), prob = 1:(K - 1)/K, K = 50, ...)
 }
 \arguments{
 \item{object}{an object of class \code{ocm}, usually a result of a call to \code{ocm}}
@@ -14,43 +16,34 @@ which to predict.
 Note that all predictor variables should be present, having the same names as the variables 
 used to fit the model. If \code{NULL}, predictions are computed for the original dataset.}
 
-\item{ndens}{the number of evenly spaced values of \code{v} over which the probability density is evaluated (default: 10)}
+\item{type}{type of prediction. One of "response" (default), "density", "CDF", "quantile", "regressor", "exp_regressor", "hazard", "cum_hazard" or "survival"}
+
+\item{prob}{probabilities used to evaluate the quantile function (if \code{type="quantile"})}
+
+\item{K}{number of evenly spaced values of \code{v} over which the probability density is evaluated (if \code{type="density"} or \code{type="CDF"}) or number of probabilities at which the quantile function is evaluated (if \code{type="quantile"}). The default is 50.}
 
 \item{...}{further arguments passed to or from other methods}
 }
 \value{
-A list containing the following components: 
-\item{mean}{a vector of length equal to the number of observations.
-Each element is the mean of \code{v}, 
-the  continuous ordinal random variable, conditional on the covariates in the model.}
-\item{density}{a matrix with number of rows equal to the number of observations. Each row 
-contains the values of the log density function of \code{v} conditional on the covariates in the 
-model. 
-The density function is calculated over \code{ndens} equally-spaced values of v in (0,1).}
-\item{x}{a vector with the \code{ndens} equally-spaced values of \code{v} in (0,1) used to compute the 
-density of v}
-\item{formula}{the formula used to fit the model}
-\item{newdata}{a new data frame used to make predictions. It takes value NULL if no new data frame has been used.}
+A vector of predictions, according to the \code{type}.
 }
 \description{
 Predicted values based on \code{ocm} object
 }
 \details{
 An object of class \code{ocm} and optionally a new data 
-frame are used to compute the probability 
-densities of \code{v}, the continuous ordinal score. The estimated parameters 
-of the fitted model and \code{ndens}
-values of \code{v} are used to compute the probability densities and their means. If a new data frame is used to make predictions, the individual (random) effects are set to zero, while they are maintained to the estimated values if \code{newdata} is NULL.
+frame are used to compute the predictions. The estimated parameters 
+of the fitted model and \code{K}
+values of \code{v} are used to compute the conditional probability density and the conditional cumulative distribution. If a new data frame is used to make predictions, the individual (random) effects are set to zero, while they are maintained to the estimated values if \code{newdata} is NULL.
 }
 \examples{
 \dontrun{
 fit.overall <- ocm(overall ~ cycleno + age + bsa + treatment, data=ANZ0001.sub, scale=c(0,100))
 pred <- predict(fit.overall)
-plot(pred)
 }
 }
 \seealso{
-\code{\link{ocm}}, \code{\link{plot.predict.ocm}}
+\code{\link{ocm}}
 }
 \author{
 Maurizio Manuguerra, Gillian Heller

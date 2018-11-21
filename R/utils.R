@@ -1,10 +1,12 @@
-ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.names=NULL, par.names=NULL, v=NULL, v2=NULL, mat=NULL, order=4, n.int.knots=NULL){
+ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.names=NULL, par.names=NULL, v=NULL, v2=NULL, mat=NULL, matv2=NULL, order=4, n.int.knots=NULL, knots=NULL, idrop=NULL){
+  idrop=NULL #needed for predict
   if (type=="fix.eff"){
     len=ncol(mat)
     pars=rep(0,len)
     if (is.null(par.names)) par.names=paste("beta",1:len)
     names(pars)=par.names
     mat1=array(0,dim=dim(mat))
+    mat2=NULL
     knots=NULL
     lambda=0
     R <- diag(0,len)
@@ -17,16 +19,16 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
     if (is.null(n.int.knots)) n.int.knots=ifelse(max.n<15, max.n, 15) #TODO rewrite log interpolation
     #if (n.knots==0) n.knots=ifelse(n<50, n, ifelse(n<=3200,round(49+exp(2.1408+0.3573*log(max.n-49))),round(200+(max.n-3200)^0.2))) #TODO rewrite log interpolation
     len = (n.int.knots+order-1)
-    pars <- rep(1, len) #runif(len) 
+    pars <- rep(.1, len) #runif(len) 
     names(pars) = paste("g function: theta",1:len)
-    knots  <- knots2_mpl(unique(v), range(v), order=order, n.int.knots=n.int.knots, splines="isplines")
+    if (is.null(knots)) knots  <- knots2_mpl(unique(v), range(v), order=order, n.int.knots=n.int.knots, splines="isplines")
     ##basis2_mpl returns the centered basis functions evaluated at v
     bases  <- basis2_mpl(v,knots,order=order,which=c(1,2,3), splines="isplines")
     mat=bases$Psi
     mat1=bases$psi
     mat2=bases$psi2
     vars=apply(mat,2,var)
-    idrop=which.min(vars)
+    if (is.null(idrop)) idrop=which.min(vars)
     mat=mat[,-idrop]
     mat1=mat1[,-idrop]
     mat2=mat2[,-idrop]
@@ -38,10 +40,11 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
     len=ncol(mat)
     lambda=1
     sigma2 <- 1/(2*lambda)
-    pars <- rnorm(len, 0, sqrt(sigma2))
+    pars <- rep(0, len) #rnorm(len, 0, sqrt(sigma2))
     if (is.null(par.names)) par.names=paste(paste(group.names,": b",sep=''),1:len)
     names(pars) <- par.names
     mat1=array(0,dim=dim(mat))
+    mat2=NULL
     knots=NULL
     R <- diag(1,len)
     estimate_lambda = T
@@ -52,21 +55,22 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
     max.n = max(2,round((n-1-order)*0.8)) ##FIXME consider gfun. maybe a vector with all the numbers 
     if (is.null(n.int.knots)) n.int.knots=ifelse(max.n<15, max.n, 15) #TODO rewrite log interpolation
     len = (n.int.knots+order-1)-1
-    pars <- runif(len) #it's delta_theta, not theta
+    pars <- rep(0, len) #runif(len) #it's delta_theta, not theta
     if (is.null(par.names)) par.names=paste(paste(group.names,": theta",sep=''),1:len)
     names(pars) <- par.names
-    knots  <- knots2_mpl(unique(v[!is.na(v)]), range(v[!is.na(v)]), order=order, n.int.knots=n.int.knots, splines="bsplines")
+    if (is.null(knots)) knots  <- knots2_mpl(unique(v[!is.na(v)]), range(v[!is.na(v)]), order=order, n.int.knots=n.int.knots, splines="bsplines")
     ##basis2_mpl returns the centered basis functions evaluated at v
     bases  <- basis2_mpl(v[!is.na(v)],knots,order=order,which=c(1,2,3), splines="bsplines")
     mat=bases$Psi
     mat1=bases$psi
     mat2=bases$psi2
     vars=apply(mat,2,var)
-    idrop=which.min(vars)
+    if (is.null(idrop)) idrop=which.min(vars)
     mat=mat[,-idrop]
     mat1=mat1[,-idrop]
     mat2=mat2[,-idrop]
     #if (length(which.na)>0) mat[which.na,]=mat1[which.na,]=mat2[which.na,]=0
+    #this needs to be rewritten in the proper framework (surface splines)
     if (!is.null(v2)){
       matv2 <- matrix(rep(v2,len),ncol=len,byrow=FALSE)  ##FIXME
       mat  <- mat  * matv2
@@ -91,6 +95,10 @@ ocmParsSingle <- function(type=c("fix.eff","gfun","rnd.eff","smoother"), group.n
     pars = pars, 
     mat = mat, 
     mat1 = mat1, 
+    mat2 = mat2,
+    idrop = idrop, #needed for predict
+    v2=v2, #needed for predict
+    matv2=matv2, #needed for predict
     R = R, 
     Rstar = NULL,
     order = order, 
@@ -184,7 +192,7 @@ ocmPars <- function(formula, data, v, n.int.knots=NULL, order=4){
         var = vars[which(var.is.smooth)]
         var2 = vars[which(!var.is.smooth)]
         var2data = data[[var2]]
-        if (is.numeric(var2data)) stop(paste("\n",var2,"must be a factor in",terms[i_s[i]],".\nYou could consider to transform the variable",var2,"in a factor and run the analysis again."))
+        if (is.numeric(var2data)) stop(paste("\n",var2,"must be a factor in",terms[i_s[i]],".\nYou could consider transforming the variable",var2,"in a factor and running the analysis again."))
       }
       var_naked = gsub("s(","",var, fixed=T)
       var_naked = gsub(")","",var_naked, fixed=T)
@@ -199,18 +207,195 @@ ocmPars <- function(formula, data, v, n.int.knots=NULL, order=4){
           smooth_obj <- ocmParsSingle(type="smoother", v=varBYfactor, v2=NULL, group.names=name, par.names=NULL, order=order, n.int.knots=n.int.knots)
           obj = append(obj, list(smooth_obj))
         }
-      } else { #Never called
+      } else { 
+         if (!is.null(var2)) name=paste(var2,":",var,sep='')
+         smooth_obj <- ocmParsSingle(type="smoother", v=data[[var_naked]], v2=var2data, group.names=name, par.names=NULL, order=order, n.int.knots=n.int.knots)
+         obj = append(obj, list(smooth_obj))
+      }
+    }
+  }
+  obj <- compute_Rstar(obj)
+  #
+	obj <- compute_gmat1_ext(obj)
+  #
+  class(obj) <- c("ocmPars", "list")
+  #print(str(obj))
+  obj
+}
+
+ocmPars_update <- function(object, newdata){
+  pars_obj_fit <- object$pars_obj
+  formula <- object$formula
+  data <- object$data
+  scale <- object$scale
+  weights <- object$weights
+  ## Join with newdata
+  internames <- intersect(names(data), names(newdata))
+  data[internames] <- newdata[internames]
+  if (any(apply(data,2,min)<apply(object$data,2,min)) | any(apply(data,2,max)>apply(object$data,2,max))) stop("New values are not in the range of the values used for the fit.")
+  ##
+  v = eval(formula[[2]], envir = data)
+  v <- as.numeric(v)
+  if (min(v)<scale[1] | max(v)>scale[2]) {stop(paste("Ordinal scores (v) outside the ",scale[1],"-",scale[2]," range have been found. Please either rescale or use the 'scale' parameter when calling ocm.",sep=''))}
+  v <- (v-scale[1])/(scale[2]-scale[1])
+  v <- ((length(v)-1)*v+0.5)/length(v)
+  ### Sort data set by v #FIXME: do we need this?
+  sorting_ind <- order(v)
+  v <- v[sorting_ind]
+  data <- data[sorting_ind,]
+  weights <- weights[sorting_ind]
+  ##########################
+  #fix, smooth and rnd terms
+  ##########################
+  if (attributes(terms(formula))$intercept != 0) formula <- update(formula, .~.-1) 
+  terms <- attributes(terms(formula))$term.labels
+  i_rnd <- which(sapply(terms,function(x)grepl("|", x, fixed=T)))
+  i_s <- which(sapply(terms,function(x)grepl("s(", x, fixed=T)))
+  #FIXME: write better code
+  obj=list()
+  #############
+  #FIX effects
+  #############
+  remove_ind = c(i_rnd, i_s)
+  i_fix <- (1:length(terms))
+  if (length(remove_ind)>0) i_fix <- i_fix[-remove_ind]
+  if (length(i_fix)>0){
+    fixterms <- terms[i_fix]
+    nf.fix <- paste(fixterms, collapse="+")
+    form.fix <- update(formula, as.formula(paste("~ 1+",nf.fix)))
+  }else{
+    fixterms <- NULL
+    form.fix <- update(formula, as.formula("~ 1"))
+  }
+  mf.fix <- model.frame(formula=form.fix, data=data)
+  x <- model.matrix(attr(mf.fix, "terms"), data=mf.fix)
+  new_par_obj <- ocmParsSingle(type="fix.eff", mat=x, par.names = dimnames(x)[[2]])
+  fix_ind <- which(sapply(pars_obj_fit, function(x)x$type)=="fix.eff")
+  new_par_obj$pars <- pars_obj_fit[[fix_ind]]$pars
+  obj = append(obj, list(new_par_obj))
+  #obj = append(obj, list(ocmParsSingle(type="fix.eff", mat=x, par.names = fixterms)))
+  ###########
+  #G FUNCTION
+  ###########
+  gfun_ind = which(sapply(pars_obj_fit, function(x)x$type)=="gfun")
+  # obj = append(obj, list(ocmParsSingle(type="gfun", v=v, order=pars_obj_fit[[gfun_ind]]$order, n.int.knots = pars_obj_fit[[gfun_ind]]$n.int.knots, knots = pars_obj_fit[[gfun_ind]]$knots)))
+  obj = append(obj, list(predict.g.spline(pars_obj_fit[[gfun_ind]], newvalues=v)))
+  ############
+  #RND effects
+  ############
+  nrndterms <- length(i_rnd)
+  if (nrndterms>0){
+    warning("Individual (random) effects removed from model as a new data set has been used.")
+  }
+  #############
+  #SMOOTH terms
+  #############
+  nsmoothterms <- length(i_s)
+  smoothterms <- terms[i_s]
+  if (nsmoothterms>0){
+    for (i in 1:nsmoothterms){
+      var=terms[i_s[i]] #smooth
+      var_naked = gsub("s(","",var, fixed=T)
+      var_naked = gsub(")","",var_naked, fixed=T)
+      if (var_naked == all.vars(update(formula, . ~ 1))) {
+        warning(paste("It is not possible to include the term",var,"in the formula for identifiability reasons."))
+        next()
+      }
+      var2=var2data=NULL         #non-smooth
+      if (grepl(":", var, fixed=T)){
+        vars=strsplit(var, ":", fixed=T)[[1]]
+        if (length(vars)>2) stop("Variable name not valid: colons characters are not allowed in variable names.")
+        var.is.smooth <- sapply(vars, function(var)grepl("s(", var, fixed=T))
+        var = vars[which(var.is.smooth)]
+        var2 = vars[which(!var.is.smooth)]
+        var2data = data[[var2]]
+        if (is.numeric(var2data)) stop(paste("\n",var2,"must be a factor in",terms[i_s[i]],".\nYou could consider to transform the variable",var2,"in a factor and run the analysis again."))
+      }
+      var_naked = gsub("s(","",var, fixed=T)
+      var_naked = gsub(")","",var_naked, fixed=T)
+      if (is.factor(var2data)){
+        levs = levels(var2data)
+        fac_start = ifelse(var %in% smoothterms, 2, 1)
+        for (ilev in fac_start:nlevels(var2data)){ #skip the first level for identifiability reasons
+          name=paste(var2,levs[ilev],":",var,sep='')
+          smooth_ind = which(sapply(pars_obj_fit, function(x)x$group.names)==name)
+          ii = which(var2data==levs[ilev])
+          varBYfactor = rep(NA, length(var2data))
+          varBYfactor[ii] = data[[var_naked]][ii]
+          #smooth_obj <- ocmParsSingle(type="smoother", v=varBYfactor, v2=NULL, group.names=name, par.names=NULL, order=pars_obj_fit[[smooth_ind]]$order, n.int.knots = pars_obj_fit[[smooth_ind]]$n.int.knots, knots = pars_obj_fit[[smooth_ind]]$knots)
+          smooth_obj <- predict.smooth.spline(pars_obj_fit[[smooth_ind]], newvalues=varBYfactor)
+          obj = append(obj, list(smooth_obj))
+        }
+      } else {
         if (!is.null(var2)) name=paste(var2,":",var,sep='')
-        smooth_obj <- ocmParsSingle(type="smoother", v=data[[var_naked]], v2=var2data, group.names=name, par.names=NULL, order=order, n.int.knots=n.int.knots)
+        name <- var
+        smooth_ind = which(sapply(pars_obj_fit, function(x)x$group.names)==name)
+        # #smooth_obj <- ocmParsSingle(type="smoother", v=data[[var_naked]], v2=var2data, group.names=name, par.names=NULL, order=pars_obj_fit[[smooth_ind]]$order, n.int.knots = pars_obj_fit[[smooth_ind]]$n.int.knots, knots = pars_obj_fit[[smooth_ind]]$knots)
+        smooth_obj <- predict.smooth.spline(pars_obj_fit[[smooth_ind]], newvalues=data[[var_naked]])
         obj = append(obj, list(smooth_obj))
       }
     }
   }
   obj <- compute_Rstar(obj)
+  #
+  obj <- compute_gmat1_ext(obj)
+  #
   class(obj) <- c("ocmPars", "list")
   #print(str(obj))
   obj
 }
+
+predict.g.spline <- function(par_obj, newvalues=NULL){
+  new_par_obj <- par_obj
+  v_old=par_obj$v
+  if (min(v_old)>min(newvalues) | max(v_old)<max(newvalues)) stop("New values are not in the range of the values used for the fit.")
+  bases  <- basis2_mpl(newvalues,knots=par_obj$knots,order=par_obj$order,which=c(1,2,3), splines="isplines")
+  mat=bases$Psi
+  mat1=bases$psi
+  mat2=bases$psi2
+  vars=apply(mat,2,var)
+  idrop=par_obj$idrop
+  mat=mat[,-idrop]
+  mat1=mat1[,-idrop]
+  mat2=mat2[,-idrop]
+  R <- formR2(newvalues, mat2)
+  new_par_obj$mat = mat
+  new_par_obj$mat1 = mat1
+  new_par_obj$R = R
+  new_par_obj$len = nrow(R)
+  return(new_par_obj)
+}
+
+predict.smooth.spline <- function(par_obj, newvalues=NULL){
+  new_par_obj <- par_obj
+  v_old=par_obj$v
+  if (min(v_old)>min(newvalues) | max(v_old)<max(newvalues)) stop("New values are not in the range of the values used for the fit.")
+  bases  <- basis2_mpl(newvalues,knots=par_obj$knots,order=par_obj$order,which=c(1,2,3), splines="bsplines")
+  mat=bases$Psi
+  mat1=bases$psi
+  mat2=bases$psi2
+  idrop=par_obj$idrop
+  mat=mat[,-idrop]
+  mat1=mat1[,-idrop]
+  mat2=mat2[,-idrop]
+  if (!is.null(par_obj$v2)){
+    matv2 <- matrix(rep(par_obj$v2,par_obj$len),ncol=par_obj$len,byrow=FALSE)  
+    mat  <- mat  * matv2
+  }
+  R <- formR2(newvalues, mat2)
+  new_par_obj$mat = mat
+  new_par_obj$mat1 = mat1
+  new_par_obj$mat2 = mat2
+  new_par_obj$R = R
+  new_par_obj$len = nrow(R)
+  return(new_par_obj)
+}
+
+
+
+
+
+
 #######################################################################################
 ocmTerms <- function(formula, data, random.terms = TRUE, ...){
   ##########################
@@ -343,8 +528,8 @@ rnd.x.bootstrap <- function(data, indices, fit){
 }
 
 fix.x.bootstrap <- function(data, indices, fit){
-  h <- lin_regressor(fit[[2]])
-  What  <- -as.numeric(h-gfun(fit[[2]]))
+  h <- lin_regressor(fit[[2]]) - gfun(fit[[2]])
+  What  <- -as.numeric(h)
   Wstar <- What + h[indices]
   data$new_v <- gfun_inv(Wstar, fit[[2]])*diff(fit$scale) + fit$scale[1]
   mod <- try(update(fit, new_v ~., data = data), silent=TRUE)
@@ -352,8 +537,8 @@ fix.x.bootstrap <- function(data, indices, fit){
 }
 
 param.bootstrap <- function(data, indices, fit){
-  h <- lin_regressor(fit[[2]])
-  What <- -as.numeric(h-gfun(fit[[2]]))
+  h <- lin_regressor(fit[[2]]) - gfun(fit[[2]])
+  What <- -as.numeric(h)
   Wstar <- What + rlogis(fit$sample.size)
   data$new_v <- gfun_inv(Wstar, fit[[2]])*diff(fit$scale) + fit$scale[1]
   mod <- try(update(fit, new_v ~., data = data), silent=TRUE)

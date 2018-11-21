@@ -27,6 +27,9 @@ maximized using the \code{MI} algorithm (Ma, 2010). Fixed- and mixed-effects mod
 in the function \code{\link{ocm}}.
 }
 \references{
+Manuguerra M, Heller GZ, Ma J (2017). Semi-parametric Ordinal Regression Models for Continuous 
+ Scales, \emph{Proceedings of the 32nd International Workshop on Statistical Modelling}. July 3-7, 2017, Groningen, Netherlands.
+
 Manuguerra M, Heller GZ (2010). Ordinal Regression Models for Continuous 
  Scales, \emph{The International Journal of Biostatistics}: 6(1), Article 14.
 
