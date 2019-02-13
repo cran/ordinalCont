@@ -5,7 +5,7 @@
 \alias{get_gfun.ocm}
 \title{Estimated g function for a Fitted Model Object}
 \usage{
-\method{get_gfun}{ocm}(object, ...)
+get_gfun(object, ...)
 
 \method{get_gfun}{ocm}(object, ...)
 }

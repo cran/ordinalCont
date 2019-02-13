@@ -456,8 +456,8 @@ plot.ocm <- function(x, plot.only=NULL, CIs = c('vcov','no', 'rnd.x.bootstrap','
     }
     lines(c(.5,.5), ylim, col='grey')
     lines(xlim, c(0, 0), col='grey')
-    lines(v,gfun0,lty=21, ...)
-    legend('topleft', c("g function","Std logit"), lty=c(19,21))
+    # lines(v,gfun0,lty=21, ...)
+    # legend('topleft', c("g function","Std logit"), lty=c(19,21))
   }
   if (individual_plots)readline("Press any key to continue.\n")
   # ########### PLOT 2
@@ -637,7 +637,7 @@ anova.ocm <- function(object, ...)
   if(!all(sapply(mlist, function(model)
     inherits(model, c("ocm")))))
     stop("only 'ocm' objects are allowed")
-  nfitted <- sapply(mlist, function(x) length(x$fitted.values))
+  nfitted <- sapply(mlist, function(x) length(fitted.values(x)))
   if(any(nfitted != nfitted[1L]))
     stop("models were not all fitted to the same dataset")
   no.par <- sapply(mlist, function(x) x$edf)
@@ -815,7 +815,6 @@ vcov.ocm <- function(object, ...) {
 #' @description Calculates the estimated g function for a fitted \code{ocm} object
 #' @param object an \code{ocm} object
 #' @param ... further arguments to be passed to methods
-#' @method get_gfun ocm
 #' @return a dataframe containing four columns: the values of the score v, the estimated g function and the 95\%CIs
 #' @seealso \code{\link{ocm}}
 #' @author Maurizio Manuguerra, Gillian Heller
@@ -825,7 +824,7 @@ vcov.ocm <- function(object, ...) {
 #' get_gfun(fit.overall)
 #' }
 #' @rdname get_gfun
-#' @export 
+#' @export get_gfun
 get_gfun <- function(object, ...){
   UseMethod("get_gfun", object)
 }
@@ -834,7 +833,7 @@ get_gfun <- function(object, ...){
 #'
 #' @rdname get_gfun
 #' @method get_gfun ocm
-#' @export get_gfun.ocm
+# #' @export get_gfun.ocm
 get_gfun.ocm <- function(object, ...){
   pars_obj <- object$pars_obj
   inds <- ind_pars_obj(pars_obj)

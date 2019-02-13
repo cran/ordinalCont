@@ -1,9 +1,9 @@
-8dbc77b44ca96d53984da9f0e06e579b *DESCRIPTION
-8806b3a057314133e8b8caed9529f7c0 *NAMESPACE
+fef453a27d281f8760b49c63bd810608 *DESCRIPTION
+35bb76506b383a2050642bd81490653c *NAMESPACE
 9cc39e7d1af85c10bd1c5fa0c1fb63b8 *NEWS
 6a0f3f9e1af7442aa7afb600a5fff893 *R/gfunction.R
 118298bd77da2859478429b3c361a3ff *R/ocm.R
-f5fbb5fcf9d94ad6657f08648d2f5cef *R/ocm.methods.R
+cb1bfcc8ca1154c31240a8ef67121e1f *R/ocm.methods.R
 1d10b0fe8a1eb1c41e1a76cfcd7c4441 *R/ocm_gen.R
 3c8cab6ab0d9c3b6115d08ab9a94fc18 *R/ordinalCont.R
 a52663819d68e02d0ac76cdb43b2f6f6 *R/splines.R
@@ -21,7 +21,7 @@ dcae57cdde3124043f19d1b5be2d8e4e *man/deriv_link.Rd
 dbfacbf790a826c568f43f6930a04398 *man/extractAIC.ocm.Rd
 87a0fdf503b71b6253b2f639ed254a17 *man/fitted.ocm.Rd
 1dbe17fa8cb8bbb23511f7216c55b486 *man/formula.ocm.Rd
-a03c800e724131f5f3bd4d1c00bbd39b *man/get_gfun.Rd
+93e1fa86cba9f1eae46c9f7a9afae09f *man/get_gfun.Rd
 dc907ff66ff07cc66dd2ccbe2eb00beb *man/inv_link.Rd
 10da56670574307368dbad3fc40435aa *man/logLik.ocm.Rd
 db5f963c8a39f70aee4a6c64e999da3a *man/model.frame.ocm.Rd
