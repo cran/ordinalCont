@@ -2,6 +2,7 @@
 #'
 #' @name ordinalCont-package
 #' @docType package
+#' @description Regression analysis of continous ordinal data via cumulative link models and cumulative link mixed models. The package can be used to fit a variety of transformation models.
 #' @details Ordinal regression analysis is a convenient tool for analyzing ordinal response variables 
 #' in the presence of covariates. We extend this methodology to the case of continuous self-rating 
 #' scales such as the Visual Analog Scale (VAS) used in pain assessment, or the Linear Analog 
@@ -28,6 +29,7 @@
 #' @references Ma, J. (2010). Positively Constrained Multiplicative Iterative Algorithm for Maximum 
 #' Penalized Likelihood Tomographic Reconstruction, \emph{Nuclear Science} 57 (1): 181-92.
 #' @references Ramsay, J. O. (1988). Monotone regression splines in action. \emph{Statistical science}, 425-441.
+#' @references Manuguerra M, Heller GZ, Ma J (2020). Continuous Ordinal Regression for Analysis of Visual Analogue Scales: The R Package ordinalCont, \emph{Journal of Statistical Software}. 96(8). doi:10.18637/jss.v096.i08
 #' @author Maurizio Manuguerra, Gillian Heller
 NULL
 
@@ -63,7 +65,7 @@ NULL
 #' }
 #'
 #' @docType data
-#' @keywords datasets
+#' @concept datasets
 #' @name ANZ0001
 #' @usage data(ANZ0001)
 #' @references Stockler, M., T. Sourjina, P. Grimison, V. Gebski, M. Byrne, V. Harvey, P. Francis et al. 
@@ -104,7 +106,7 @@ NULL
 #' }
 #'
 #' @docType data
-#' @keywords datasets
+#' @concept datasets
 #' @name ANZ0001.sub
 #' @usage data(ANZ0001.sub)
 #' @references Stockler, M., T. Sourjina, P. Grimison, V. Gebski, M. Byrne, V. Harvey, P. Francis et al. 
@@ -133,7 +135,7 @@ NULL
 #' }
 #'
 #' @docType data
-#' @keywords datasets
+#' @concept datasets
 #' @name neck_pain
 #' @usage data(neck_pain)
 #' @references Chow RT, Heller GZ, Barnsley L (2006). ``The effect of 300 mW, 830 nm laser on chronic 

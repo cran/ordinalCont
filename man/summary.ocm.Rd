@@ -26,4 +26,4 @@ summary(fit.overall)
 \author{
 Maurizio Manuguerra, Gillian Heller
 }
-\keyword{summary}
+\concept{summary}

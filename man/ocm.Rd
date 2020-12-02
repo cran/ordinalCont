@@ -4,9 +4,18 @@
 \alias{ocm}
 \title{Ordinal regression for continuous scales}
 \usage{
-ocm(formula, data = NULL, scale = NULL, weights, link = c("logit",
-  "probit", "cloglog", "loglog", "cauchit"), niters = c(500, 500),
-  conv_crit = 0.01, n.int.knots = NULL, order = 4, lambdas = NA)
+ocm(
+  formula,
+  data = NULL,
+  scale = NULL,
+  weights,
+  link = c("logit", "probit", "cloglog", "loglog", "cauchit"),
+  niters = c(500, 500),
+  conv_crit = 0.01,
+  n.int.knots = NULL,
+  order = 4,
+  lambdas = NA
+)
 }
 \arguments{
 \item{formula}{a formula expression as for regression models, of the form 
@@ -92,11 +101,10 @@ Manuguerra M, Heller GZ (2010). Ordinal Regression Models for Continuous
 
 Manuguerra M, Heller GZ, Ma J (2017). Semi-parametric Ordinal Regression Models for Continuous 
  Scales, \emph{Proceedings of the 32nd International Workshop on Statistical Modelling}. July 3-7, 2017, Groningen, Netherlands.
+
+Manuguerra M, Heller GZ, Ma J (2020). Continuous Ordinal Regression for Analysis of Visual Analogue Scales: The R Package ordinalCont, \emph{Journal of Statistical Software}. 96(8). doi:10.18637/jss.v096.i08
 }
 \author{
 Maurizio Manuguerra, Gillian Heller
 }
-\keyword{likelihood,}
-\keyword{log-likelihood,}
-\keyword{ordinal}
-\keyword{regression.}
+\concept{likelihood log-likelihood ordinal regression}

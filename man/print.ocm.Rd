@@ -24,5 +24,4 @@ which prints objects of class \code{ocm}.
 \author{
 Maurizio Manuguerra, Gillian Heller
 }
-\keyword{likelihood,}
-\keyword{log-likelihood.}
+\concept{likelihood log-likelihood.}

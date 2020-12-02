@@ -5,7 +5,7 @@
 #' @param x an object of class \code{ocm}, usually, a result of a call to \code{ocm}.
 #' @param ... further arguments passed to or from other methods.
 #' @return Prints an \code{ocm} object.
-#' @keywords likelihood, log-likelihood.
+#' @concept likelihood log-likelihood.
 #' @method print ocm
 #' @seealso \code{\link{ocm}}, \code{\link{summary.ocm}}
 #' @export
@@ -128,7 +128,7 @@ formula.ocm <- function(x, ...)
 #' @param full logical, if TRUE (the default) all the parameters are printed; if FALSE, only the fixed effects are printed.
 #' @param ... further arguments passed to or from other methods
 #' @method summary ocm
-#' @keywords summary
+#' @concept summary
 #' @seealso \code{\link{ocm}}, \code{\link{print.ocm}}
 #' @author Maurizio Manuguerra, Gillian Heller
 #' @examples
@@ -239,7 +239,7 @@ print.summary.ocm <- function(x, full, ...)
 #' @param prob probabilities used to evaluate the quantile function (if \code{type="quantile"})
 #' @param K number of evenly spaced values of \code{v} over which the probability density is evaluated (if \code{type="density"} or \code{type="CDF"}) or number of probabilities at which the quantile function is evaluated (if \code{type="quantile"}). The default is 50.
 #' @param ... further arguments passed to or from other methods
-#' @keywords predict
+#' @concept predict
 #' @method predict ocm
 #' @author Maurizio Manuguerra, Gillian Heller
 #' @return  A vector of predictions, according to the \code{type}. 
@@ -363,7 +363,7 @@ fitted.ocm <- function(object, ...)
 #' object are plotted. If smothers are included in the formula, the user has the option to 
 #' plot them in the same graph or separately.
 #' If \code{CIs} is not \code{"no"}, 95\% confidence bands are also plotted.
-#' @keywords plot
+#' @concept plot
 #' @export
 #' @import boot
 #' @seealso \code{\link{ocm}}
@@ -594,7 +594,7 @@ plot.ocm <- function(x, plot.only=NULL, CIs = c('vcov','no', 'rnd.x.bootstrap','
 #' @param ... one or more additional \code{ocm} objects
 #' @details Likelihood ratio testing of nested models is performed. 
 #' @method anova ocm
-#' @keywords anova
+#' @concept anova
 #' @export
 #' @author Maurizio Manuguerra, Gillian Heller
 #'  @seealso \code{\link{ocm}}, \code{\link{print.anova.ocm}}
@@ -690,7 +690,7 @@ anova.ocm <- function(object, ...)
 #' @param signif.stars a logical. Should the significance stars be printed? Defaults to the value 
 #' returned by getOption("show.signif.stars")
 #' @param ... further arguments passed to or from other methods
-#' @keywords summary, anova
+#' @concept summary anova
 #' @seealso \code{\link{ocm}}, \code{\link{anova.ocm}}
 #' @return Prints \code{anova.ocm} object
 #' @author Maurizio Manuguerra, Gillian Heller

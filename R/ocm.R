@@ -21,7 +21,7 @@
 #' @param n.int.knots the number of internal knots used to compute the spline bases. The default (NULL) is round((n-1-order)*0.8) if in the interval [8,15], and 8 or 15 otherwise.
 #' @param order the order of the spline functions. The default is 4 (cubic splines).
 #' @param lambdas NA (the default) or a vector of length equal to the number of smoothing terms, including the g function and, optionally, the random effect terms and the smooters. If ``lambdas'' is a vector, each element \eqn{\lambda_i} can be a number, in which case the corresponding term is penalized using \eqn{\lambda_i} as smoothing parameter, zero, in which case the corresponding term is unpenalized, or NA, in which case the value of \eqn{\lambda_i} is estimated maximmizing the marginal posterior function.
-#' @keywords likelihood, log-likelihood, ordinal regression.
+#' @concept likelihood log-likelihood ordinal regression
 #' @details Fits a continuous ordinal regression model using penalized maximum likelihood. 
 #' The model can contain fixed effects and optionally mixed effects and smoothers. 
 #' The g function is estimated using monotone increasing I-splines, and the link function is the logit, 
@@ -55,6 +55,7 @@
 #'  Scales, \emph{The International Journal of Biostatistics}: 6(1), Article 14.
 #' @references Manuguerra M, Heller GZ, Ma J (2017). Semi-parametric Ordinal Regression Models for Continuous 
 #'  Scales, \emph{Proceedings of the 32nd International Workshop on Statistical Modelling}. July 3-7, 2017, Groningen, Netherlands.
+#' @references Manuguerra M, Heller GZ, Ma J (2020). Continuous Ordinal Regression for Analysis of Visual Analogue Scales: The R Package ordinalCont, \emph{Journal of Statistical Software}. 96(8). doi:10.18637/jss.v096.i08  
 #' @author Maurizio Manuguerra, Gillian Heller
 #' @import grDevices
 #' @import graphics

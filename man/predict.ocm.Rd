@@ -4,9 +4,15 @@
 \alias{predict.ocm}
 \title{Predict method for Continuous Ordinal Fits}
 \usage{
-\method{predict}{ocm}(object, newdata = NULL, type = c("response",
-  "density", "CDF", "quantile", "regressor", "exp_regressor", "hazard",
-  "cum_hazard", "survival"), prob = 1:(K - 1)/K, K = 50, ...)
+\method{predict}{ocm}(
+  object,
+  newdata = NULL,
+  type = c("response", "density", "CDF", "quantile", "regressor", "exp_regressor",
+    "hazard", "cum_hazard", "survival"),
+  prob = 1:(K - 1)/K,
+  K = 50,
+  ...
+)
 }
 \arguments{
 \item{object}{an object of class \code{ocm}, usually a result of a call to \code{ocm}}
@@ -48,4 +54,4 @@ pred <- predict(fit.overall)
 \author{
 Maurizio Manuguerra, Gillian Heller
 }
-\keyword{predict}
+\concept{predict}

@@ -4,7 +4,9 @@
 \name{neck_pain}
 \alias{neck_pain}
 \title{Neck pain data set}
-\format{A data frame with 264 rows and 4 variables}
+\format{
+A data frame with 264 rows and 4 variables
+}
 \usage{
 data(neck_pain)
 }
@@ -32,4 +34,4 @@ The variables are as follows:
 Chow RT, Heller GZ, Barnsley L (2006). ``The effect of 300 mW, 830 nm laser on chronic 
 neck pain: a double-blind, randomized, placebo-controlled study.'' Pain, 124(1-2), 201-10. doi:16806710.
 }
-\keyword{datasets}
+\concept{datasets}

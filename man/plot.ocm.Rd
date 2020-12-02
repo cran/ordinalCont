@@ -4,11 +4,18 @@
 \alias{plot.ocm}
 \title{Plot method for Continuous Ordinal Fits}
 \usage{
-\method{plot}{ocm}(x, plot.only = NULL, CIs = c("vcov", "no",
-  "rnd.x.bootstrap", "fix.x.bootstrap", "param.bootstrap"), R = 100,
-  main_gfun = "g function", main_density = "Density function when X=0",
-  xlab = "Continuous ordinal scale [v]", CIcol = "lightblue",
-  individual_plots = F, ...)
+\method{plot}{ocm}(
+  x,
+  plot.only = NULL,
+  CIs = c("vcov", "no", "rnd.x.bootstrap", "fix.x.bootstrap", "param.bootstrap"),
+  R = 100,
+  main_gfun = "g function",
+  main_density = "Density function when X=0",
+  xlab = "Continuous ordinal scale [v]",
+  CIcol = "lightblue",
+  individual_plots = F,
+  ...
+)
 }
 \arguments{
 \item{x}{an object of class \code{ocm}}
@@ -61,4 +68,4 @@ plot(fit.overall, CIs="param.bootstrap", R=100)
 \author{
 Maurizio Manuguerra, Gillian Heller
 }
-\keyword{plot}
+\concept{plot}

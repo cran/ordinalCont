@@ -4,8 +4,12 @@
 \alias{print.anova.ocm}
 \title{Print anova.ocm objects}
 \usage{
-\method{print}{anova.ocm}(x, digits = max(getOption("digits") - 2, 3),
-  signif.stars = getOption("show.signif.stars"), ...)
+\method{print}{anova.ocm}(
+  x,
+  digits = max(getOption("digits") - 2, 3),
+  signif.stars = getOption("show.signif.stars"),
+  ...
+)
 }
 \arguments{
 \item{x}{an object of class \code{anova.ocm}}
@@ -30,5 +34,4 @@ Print the results of the comparison of continuous ordinal models in likelihood r
 \author{
 Maurizio Manuguerra, Gillian Heller
 }
-\keyword{anova}
-\keyword{summary,}
+\concept{summary anova}

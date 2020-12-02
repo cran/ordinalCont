@@ -1,0 +1,21 @@
+bibentry(bibtype = "Article",
+  title        = "Continuous Ordinal Regression for Analysis of Visual Analogue Scales: The {R} Package {ordinalCont}",
+  author       = c(person(given = "Maurizio",
+                          family = "Manuguerra",
+                          email = "maurizio.manuguerra@mq.edu.au"),
+                   person(given = c("Gillian", "Z."),
+                          family = "Heller",
+			  email = "gillian.heller@mq.edu.au"),
+                   person(given = "Jun",
+                          family = "Ma",
+                          email = "jun.ma@mq.edu.au")),
+  journal      = "Journal of Statistical Software",
+  year         = "2020",
+  volume       = "96",
+  number       = "8",
+  pages        = "1--24",
+  doi          = "10.18637/jss.v096.i08",
+
+  header       = "To cite ordinalCont in publications use:"
+)
+

@@ -4,7 +4,9 @@
 \name{ANZ0001}
 \alias{ANZ0001}
 \title{ANZ0001 trial}
-\format{A data frame with 2473 rows and 11 variables}
+\format{
+A data frame with 2473 rows and 11 variables
+}
 \usage{
 data(ANZ0001)
 }
@@ -46,4 +48,4 @@ Stockler, M., T. Sourjina, P. Grimison, V. Gebski, M. Byrne, V. Harvey, P. Franc
 to classical CMF as first-line chemotherapy for advanced breast cancer (ABC).'' In \emph{ASCO Annual Meeting 
 Proceedings}, vol. 25, no. 18_suppl, p. 1031. 2007.
 }
-\keyword{datasets}
+\concept{datasets}
